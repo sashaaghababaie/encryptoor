@@ -6,9 +6,9 @@ import { Panel } from "../components/Panel";
 import { LoginForm, NoteForm } from "../components/Froms";
 
 export default function Main() {
-  const [panelState, setPanelState] = useState("inactive");
+  const [panelState, setPanelState] = useState("active");
   const [editor, setEditor] = useState({
-    show: true,
+    show: false,
     type: "login",
     animate: "show",
   });
@@ -33,7 +33,7 @@ export default function Main() {
             }}
             className={`${
               editor.animate === "disable" ? "z-10" : "z-30"
-            } border border-lime-100/10 bg-lime-500/10 absolute top-0 p-4 left-0 w-full h-[464px] z-10 rounded-3xl`}
+            } border border-lime-100/10 bg-lime-500/10 absolute top-0 p-4 left-0 w-full h-[464px] rounded-3xl`}
             initial={{ opacity: 0, scale: 0.15 }}
             animate={editor.animate}
             exit={{ opacity: 0, scale: 0.15 }}
@@ -110,14 +110,15 @@ export default function Main() {
 export const ActionButton = ({ children, ...props }) => {
   return (
     <motion.button
-      className="text-white/70 bg-zinc-800 w-full h-16 rounded-full flex items-center"
+      className="text-white/70 w-full h-16 rounded-full flex items-center b"
       initial={{ scale: 0.6, opacity: 0.8 }}
       animate={{ scale: 1, opacity: 1 }}
       whileHover={{ scale: 1.1, opacity: 1 }}
-      //   whileTap={{ scale: 0.95 }}
       {...props}
     >
-      {children}
+      <span className="w-full flex items-center justify-between transition h-full rounded-full middle-btn-3">
+        {children}
+      </span>
     </motion.button>
   );
 };
