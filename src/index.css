@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  @font-face {
+    font-family: "GeistMono";
+    src: url("../src/public/Fonts/GeistMono-VariableFont_wght.woff2")
+      format("woff2");
+    font-weight: 200;
+    font-style: normal;
+  }
+}
+
+body {
+  margin: 0;
+  /* background-color: #fcffe7; */
+  font-family: GeistMono;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+    monospace;
+}
+
+::-webkit-scrollbar {
+  width: 0.25rem;
+  height: 0.25rem;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ffa53f;
+}
