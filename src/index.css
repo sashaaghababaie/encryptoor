@@ -42,7 +42,7 @@ code {
 }
 
 .middle-btn-3 {
-  transition: 0.5s;
+  transition: background 0.5s, border-color 0.5s;
   border: 1px solid transparent;
   background: no-repeat var(--pos, 0% 0%) / var(--scale, 800% 800%)
       linear-gradient(

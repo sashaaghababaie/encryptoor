@@ -5,6 +5,7 @@ import { useAppContext } from "./Context";
 import { TextInput, PasswordInput } from "./Inputs";
 
 export const LoginForm = ({ onClose, initData }) => {
+  // const [success, setSuccess] = useState(false);
   const [error, setError] = useState({ title: "" });
   const [buttonAnim, setButtonAnim] = useState({ animate: {}, transition: {} });
   const [loginData, setLoginData] = useState(
@@ -37,13 +38,24 @@ export const LoginForm = ({ onClose, initData }) => {
     }
 
     const loginInfo = {
-      id: nanoid(),
+      id: initData ? initData.id : nanoid(),
       type: "login",
       ...loginData,
     };
 
     try {
-      await window.api.encryptVault(pass, [...data, loginInfo]);
+      const newData = [...data];
+
+      if (initData) {
+        let edited = newData.find((d) => d.id === loginInfo.id);
+        Object.assign(edited, loginInfo);
+      } else {
+        newData.push(loginInfo);
+      }
+      // setSuccess(true);
+      await window.api.encryptVault(pass, newData);
+
+      onClose();
 
       const res = await window.api.decryptVault(pass);
 
@@ -53,7 +65,7 @@ export const LoginForm = ({ onClose, initData }) => {
         console.log("error");
       }
 
-      onClose();
+      // onClose();
     } catch (error) {
       console.log("error");
       return;
@@ -61,7 +73,14 @@ export const LoginForm = ({ onClose, initData }) => {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="relative flex flex-col h-full">
+      {/* {success && (
+        <motion.div
+          className="w-full text-8xl h-full absolute bg-white/10 backdrop-blur-lg inset-0 rounded-3xl"
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 0.5 }}
+        ></motion.div>
+      )} */}
       <h1 className="font-bold text-lg text-white">Add Login info</h1>
       <div className="flex flex-col mt-4 text-sm h-full ">
         <div className="flex flex-col gap-2 h-full justify-between py-8">
@@ -162,14 +181,23 @@ export const NoteForm = ({ onClose, initData }) => {
       return;
     }
 
-    const loginInfo = {
-      id: nanoid(),
+    const noteInfo = {
+      id: initData ? initData.id : nanoid(),
       type: "note",
       ...noteData,
     };
 
     try {
-      await window.api.encryptVault(pass, [...data, loginInfo]);
+      const newData = [...data];
+
+      if (initData) {
+        let edited = newData.find((d) => d.id === noteInfo.id);
+        Object.assign(edited, noteInfo);
+      } else {
+        newData.push(noteInfo);
+      }
+
+      await window.api.encryptVault(pass, newData);
 
       const res = await window.api.decryptVault(pass);
 

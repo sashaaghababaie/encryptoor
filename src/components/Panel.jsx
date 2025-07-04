@@ -140,6 +140,8 @@ export const Panel = ({
         >
           {data.map((item, index) => (
             <ItemView
+              setPanelState={setPanelState}
+              setEditorState={setEditorState}
               removingId={removingId}
               key={item.id}
               index={index}
@@ -170,27 +172,33 @@ export const Panel = ({
   );
 };
 
-const ItemView = ({ type, ...props }) => {
-  if (type === "login") return <LoginView key={props.id} {...props} />;
-  if (type === "note") return <NoteView key={props.id} {...props} />;
+const ItemView = (item) => {
+  if (item.type === "login") return <LoginView key={item.id} {...item} />;
+  if (item.type === "note") return <NoteView key={item.id} {...item} />;
   return null;
 };
 
-const NoteView = (item) => {
+const NoteView = ({
+  removingId,
+  setRemovingId,
+  isRemoving,
+  onRemoveComplete,
+  setEditorState,
+  setPanelState,
+  ...item
+}) => {
   const [isOpen, setOpen] = useState(false);
   const [startDelete, setStartDelete] = useState(false);
   const [holdProgress, setHoldProgress] = useState(0);
-  const [showed, setShowed] = useState(false);
+  // const [showed, setShowed] = useState(false);
   const [hoverTrash, setHoverTrash] = useState(false);
   const [hoverEdit, setHoverEdit] = useState(false);
 
-  const { setData } = useAppContext();
+  // useEffect(() => setShowed(true), []);
+  useEffect(() => {
+    if (holdProgress === 100) setRemovingId(item.id);
+  }, [holdProgress]);
 
-  const deleteItem = () => {
-    setData((prev) => prev.filter((d) => d.id !== item.id));
-  };
-
-  useEffect(() => setShowed(true), []);
   useEffect(() => {
     let interval;
 
@@ -200,29 +208,43 @@ const NoteView = (item) => {
       return;
     }
 
+    if (holdProgress === 100) {
+      interval && clearInterval(interval);
+      return;
+    }
+
     interval = setInterval(() => {
-      setHoldProgress((prev) => {
-        if (prev < 100) {
-          return prev + 1;
-        } else {
-          deleteItem();
-          return 100;
-        }
-      });
+      setHoldProgress((prev) => prev < 100 && prev + 1);
     }, 15);
 
-    return () => interval && clearInterval(interval);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [startDelete]);
 
   return (
     <motion.li
+      key={item.id}
       initial={{ width: "0%", opacity: 0, marginTop: 10 }}
-      animate={{ width: "100%", opacity: 1, marginTop: 10 }}
-      exit={{ x: "100%", opacity: 0, height: 0, marginTop: 0 }}
-      transition={{ delay: showed ? 0 : item.index * 0.1 }}
-      className={`${
-        holdProgress !== 100 && "middle-btn-3"
-      } rounded-[30px] flex flex-col justify-center items-center relative overflow-hidden ${
+      variants={{
+        start: {
+          width: "100%",
+          opacity: 1,
+          marginTop: 10,
+          transition: { delay: item.index * 0.1 },
+        },
+        delete: {
+          x: "100%",
+          opacity: 0,
+          height: 0,
+          marginTop: 0,
+        },
+      }}
+      animate={isRemoving ? "delete" : "start"}
+      onAnimationComplete={(def) => {
+        if (isRemoving && def === "delete") onRemoveComplete?.();
+      }}
+      className={`middle-btn-3 rounded-[30px] flex flex-col justify-center items-center relative overflow-hidden ${
         startDelete && "shadow-lg shadow-rose-500/20"
       }`}
     >
@@ -238,7 +260,6 @@ const NoteView = (item) => {
         animate={{
           height: isOpen ? 268 : 60,
         }}
-        // transition={{ type: "spring", stiffness: 300, damping: 25 }}
         transition={{
           type: "spring",
           visualDuration: 0.25,
@@ -261,11 +282,12 @@ const NoteView = (item) => {
               onHoverEnd={() => setHoverTrash(false)}
               whileHover={{ width: 126 }}
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              onPointerDown={() => setStartDelete(true)}
-              onPointerUp={() => {
+              onClick={() => {
                 setStartDelete(false);
                 setHoldProgress(0);
               }}
+              onPointerDown={() => setStartDelete(true)}
+              onPointerUp={() => setStartDelete(false)}
               className="w-[52px] h-[52px]
             rounded-full bg-white/10 hover:bg-rose-500/50 text-white/30
             text-lg flex items-center justify-center hover:text-white/70 overflow-hidden"
@@ -283,8 +305,15 @@ const NoteView = (item) => {
               onHoverEnd={() => setHoverEdit(false)}
               whileHover={{ width: 126 }}
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              // onPointerDown={() => setStartDelete(true)}
-              // onPointerUp={() => setStartDelete(false)}
+              onClick={() => {
+                setPanelState("inactive");
+                setEditorState({
+                  initData: item,
+                  type: item.type,
+                  show: true,
+                  animate: "show",
+                });
+              }}
               className="w-[52px] h-[52px]
             rounded-full bg-white/10 hover:bg-blue-500/50 text-white/30
             text-lg flex items-center justify-center hover:text-white/70 overflow-hidden"
@@ -334,22 +363,26 @@ const LoginView = ({
   setRemovingId,
   isRemoving,
   onRemoveComplete,
+  setEditorState,
+  setPanelState,
   ...item
 }) => {
   const [isOpen, setOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [startDelete, setStartDelete] = useState(false);
   const [holdProgress, setHoldProgress] = useState(0);
-  const [showed, setShowed] = useState(false);
+  // const [showed, setShowed] = useState(false);
   const [hoverTrash, setHoverTrash] = useState(false);
   const [hoverEdit, setHoverEdit] = useState(false);
-  // const [anim, setAnim] = useState("start");
 
   useEffect(() => setShowPassword(false), [isOpen]);
-  useEffect(() => setShowed(true), []);
+
+  // useEffect(() => setShowed(true), []);
+
   useEffect(() => {
     if (holdProgress === 100) setRemovingId(item.id);
   }, [holdProgress]);
+
   useEffect(() => {
     let interval;
 
@@ -365,38 +398,42 @@ const LoginView = ({
     }
 
     interval = setInterval(() => {
-      // setHoldProgress((prev) => prev < 100 && prev + 1);
-      setHoldProgress((prev) => {
-        if (prev < 100) {
-          return prev + 1;
-        }
-      });
+      setHoldProgress((prev) => prev < 100 && prev + 1);
     }, 15);
 
-    return () => interval && clearInterval(interval);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [startDelete]);
 
   const height =
-    (Object.values(item).filter((val) => val.length > 0).length - 2) * 56 + 8;
+    (Object.values(item).filter((val) => val.length > 0).length - 3) * 56 + 8;
 
   return (
     <motion.li
+      className={`middle-btn-3 rounded-[30px] flex flex-col justify-center items-center relative overflow-hidden ${
+        startDelete && "shadow-lg shadow-rose-500/20"
+      }`}
       key={item.id}
       initial={!isRemoving && { width: "0%", opacity: 0, marginTop: 10 }}
       variants={{
-        start: { width: "100%", opacity: 1, marginTop: 10 },
-        delete: { x: "100%", opacity: 0, height: 0, marginTop: 0 },
+        start: {
+          width: "100%",
+          opacity: 1,
+          marginTop: 10,
+          transition: { delay: item.index * 0.1 },
+        },
+        delete: {
+          x: "100%",
+          opacity: 0,
+          height: 0,
+          marginTop: 0,
+        },
       }}
       animate={isRemoving ? "delete" : "start"}
-      transition={{ delay: showed ? 0 : item.index * 0.1 }}
       onAnimationComplete={(def) => {
         if (isRemoving && def === "delete") onRemoveComplete?.();
       }}
-      className={`${
-        holdProgress !== 100 && "middle-btn-3"
-      } rounded-[30px] flex flex-col justify-center items-center relative overflow-hidden ${
-        startDelete && "shadow-lg shadow-rose-500/20"
-      }`}
     >
       <div
         style={{ width: `${holdProgress}%` }}
@@ -415,11 +452,10 @@ const LoginView = ({
           visualDuration: 0.25,
           bounce: 0.35,
         }}
-        // transition={{ type: "spring", stiffness: 300, damping: 20 }}
       >
         <div className="flex shrink-0 w-full min-w-[340px] group">
           <h1
-            onClick={() => setTimeout(() => setOpen(!isOpen), 10)}
+            onClick={() => setTimeout(() => setOpen(!isOpen), 1)}
             className={`select-none cursor-pointer h-[60px] px-4 w-full flex items-center border-b transition-all duration-200 font-bold text-sm ${
               isOpen ? "border-b-white/50" : "border-b-transparent"
             }`}
@@ -433,6 +469,10 @@ const LoginView = ({
               onHoverEnd={() => setHoverTrash(false)}
               whileHover={{ width: 126 }}
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              onClick={() => {
+                setStartDelete(false);
+                setHoldProgress(0);
+              }}
               onPointerDown={() => setStartDelete(true)}
               onPointerUp={() => setStartDelete(false)}
               className="w-[52px] h-[52px]
@@ -452,8 +492,15 @@ const LoginView = ({
               onHoverEnd={() => setHoverEdit(false)}
               whileHover={{ width: 126 }}
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              // onPointerDown={() => setStartDelete(true)}
-              // onPointerUp={() => setStartDelete(false)}
+              onClick={() => {
+                setPanelState("inactive");
+                setEditorState({
+                  initData: item,
+                  type: item.type,
+                  show: true,
+                  animate: "show",
+                });
+              }}
               className="w-[52px] h-[52px]
             rounded-full bg-white/10 hover:bg-blue-500/50 text-white/30
             text-lg flex items-center justify-center hover:text-white/70 overflow-hidden"

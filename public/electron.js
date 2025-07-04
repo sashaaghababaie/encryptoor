@@ -7,7 +7,7 @@ const { encryptVault, decryptVault } = require("../src/api/vault");
 function createWindow() {
   // Create the browser window.
   const win = new BrowserWindow({
-    width: 800,
+    width: 860,
     height: 600,
     webPreferences: {
       nodeIntegration: true,

@@ -11,6 +11,7 @@ export default function Main() {
     show: false,
     type: "login",
     animate: "show",
+    initData: null,
   });
 
   return (
@@ -40,18 +41,28 @@ export default function Main() {
           >
             {editor.type === "login" ? (
               <LoginForm
+                initData={editor.initData}
                 onClose={() => {
                   setTimeout(() => {
-                    setEditor((prev) => ({ ...prev, show: false }));
+                    setEditor((prev) => ({
+                      ...prev,
+                      initData: null,
+                      show: false,
+                    }));
                     setPanelState("active");
                   }, 1);
                 }}
               />
             ) : (
               <NoteForm
+                initData={editor.initData}
                 onClose={() => {
                   setTimeout(() => {
-                    setEditor((prev) => ({ ...prev, show: false }));
+                    setEditor((prev) => ({
+                      ...prev,
+                      initData: null,
+                      show: false,
+                    }));
                     setPanelState("active");
                   }, 1);
                 }}
