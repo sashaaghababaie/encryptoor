@@ -1,7 +1,8 @@
 // ./public/electron.js
 const path = require("path");
-const { ipcMain, app, BrowserWindow, dialog } = require("electron");
+const { ipcMain, app, BrowserWindow } = require("electron");
 const isDev = require("electron-is-dev");
+const { encryptVault, decryptVault } = require("../src/api/vault");
 
 function createWindow() {
   // Create the browser window.
@@ -22,13 +23,15 @@ function createWindow() {
       ? "http://localhost:3000"
       : `file://${path.join(__dirname, "../build/index.html")}`
   );
+
   // Open the DevTools.
   if (isDev) {
     win.webContents.openDevTools({ mode: "detach" });
   }
 }
 
-const dbPath = isDev ? "desktop" : "userData";
+// const dbPath = isDev ? "desktop" : "userData";
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
@@ -51,6 +54,13 @@ app.on("activate", () => {
 });
 
 // ipcMain handlers
+ipcMain.handle("vault:encrypt", async (_event, passkey, data) => {
+  return await encryptVault(passkey, data);
+});
+
+ipcMain.handle("vault:decrypt", async (_event, passkey) => {
+  return await decryptVault(passkey);
+});
 
 //examples
 // ipcMain.handle("init", async (event) => {

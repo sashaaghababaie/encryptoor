@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, stagger } from "motion/react";
 import { useEffect, useState } from "react";
 import { Copiable } from "./Copiable";
 import {
@@ -8,6 +8,7 @@ import {
   LuTrash,
   LuPenLine,
 } from "react-icons/lu";
+import { useAppContext } from "./Context";
 
 const mock = [
   {
@@ -79,7 +80,20 @@ export const Panel = ({
   editor,
   panelState,
 }) => {
-  const [data, setData] = useState(mock);
+  // const [data, setData] = useState(mock);
+  const [removingId, setRemovingId] = useState("");
+
+  const { data, setData } = useAppContext();
+
+  useEffect(() => {
+    (async () => {
+      const res = await window.api.decryptVault("1234");
+
+      if (res.success) {
+        setData(res.data);
+      }
+    })();
+  }, []);
 
   return (
     <motion.div
@@ -119,17 +133,37 @@ export const Panel = ({
           editor.animate === "disable" ? "pb-12" : "pb-4"
         }`}
       >
-        <motion.ul>
-          <AnimatePresence>
-            {data.map((item, index) => (
-              <ItemView
-                key={item.id}
-                index={index}
-                setData={setData}
-                {...item}
-              />
-            ))}
-          </AnimatePresence>
+        <motion.ul
+        // transition={{
+        //   delayChildren: stagger(0.1),
+        // }}
+        >
+          {data.map((item, index) => (
+            <ItemView
+              removingId={removingId}
+              key={item.id}
+              index={index}
+              setRemovingId={setRemovingId}
+              isRemoving={removingId === item.id}
+              onRemoveComplete={() => {
+                setData((prev) => prev.filter((d) => d.id !== item.id));
+                setRemovingId("");
+                (async () => {
+                  await window.api.encryptVault(
+                    "1234",
+                    data.filter((d) => d.id !== item.id)
+                  );
+
+                  const res = await window.api.decryptVault("1234");
+
+                  if (res.success) {
+                    setData(res.data);
+                  }
+                })();
+              }}
+              {...item}
+            />
+          ))}
         </motion.ul>
       </div>
     </motion.div>
@@ -137,66 +171,20 @@ export const Panel = ({
 };
 
 const ItemView = ({ type, ...props }) => {
-  if (type === "login") return <LoginView {...props} />;
-  if (type === "note") return <NoteView {...props} />;
+  if (type === "login") return <LoginView key={props.id} {...props} />;
+  if (type === "note") return <NoteView key={props.id} {...props} />;
   return null;
 };
 
-/**
- *
- * @param {*} item
- * @returns
- */
-// const NoteView = ({ setData, ...item }) => {
-//   const [isOpen, setOpen] = useState(false);
-
-//   return (
-//     <motion.li
-//       initial={{ width: "0%", opacity: 0 }}
-//       animate={{ width: "100%", opacity: 1 }}
-//       transition={{ delay: item.index * 0.1 }}
-//       className="middle-btn-3  rounded-[30px] bg-zinc-500/30 flex flex-col justify-center items-center"
-//     >
-//       <h1
-//         onClick={() => setTimeout(() => setOpen(!isOpen), 1)}
-//         className={`cursor-pointer h-[60px] px-4 w-full flex items-center border-b transition-all duration-200 font-bold text-sm ${
-//           isOpen ? "border-b-white/50" : "border-b-transparent"
-//         }`}
-//       >
-//         {item.title}
-//       </h1>
-//       <AnimatePresence>
-//         {isOpen && (
-//           <motion.div
-//             className="w-full flex flex-col gap-2 mt-2 text-sm px-2 overflow-hidden font-bold text-white/70"
-//             initial={{ height: 0, opacity: 0 }}
-//             exit={{ height: 0, opacity: 0 }}
-//             animate={{ height: isOpen ? 200 : 0, opacity: isOpen ? 1 : 0 }}
-//             transition={{ duration: 0.15, ease: "easeOut" }}
-//           >
-//             {item.note && (
-//               <Copiable text={item.note} type="multi-line">
-//                 <div className="flex">
-//                   <p className="w-full h-[192px] overflow-auto py-4">
-//                     {item.note}
-//                   </p>
-//                 </div>
-//               </Copiable>
-//             )}
-//           </motion.div>
-//         )}
-//       </AnimatePresence>
-//     </motion.li>
-//   );
-// };
-
-const NoteView = ({ setData, ...item }) => {
+const NoteView = (item) => {
   const [isOpen, setOpen] = useState(false);
   const [startDelete, setStartDelete] = useState(false);
   const [holdProgress, setHoldProgress] = useState(0);
   const [showed, setShowed] = useState(false);
   const [hoverTrash, setHoverTrash] = useState(false);
   const [hoverEdit, setHoverEdit] = useState(false);
+
+  const { setData } = useAppContext();
 
   const deleteItem = () => {
     setData((prev) => prev.filter((d) => d.id !== item.id));
@@ -250,7 +238,12 @@ const NoteView = ({ setData, ...item }) => {
         animate={{
           height: isOpen ? 268 : 60,
         }}
-        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        // transition={{ type: "spring", stiffness: 300, damping: 25 }}
+        transition={{
+          type: "spring",
+          visualDuration: 0.25,
+          bounce: 0.25,
+        }}
       >
         <div className="flex shrink-0 w-full min-w-[340px] group">
           <h1
@@ -336,7 +329,13 @@ const NoteView = ({ setData, ...item }) => {
  * @param {*} item
  * @returns
  */
-const LoginView = ({ setData, ...item }) => {
+const LoginView = ({
+  removingId,
+  setRemovingId,
+  isRemoving,
+  onRemoveComplete,
+  ...item
+}) => {
   const [isOpen, setOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [startDelete, setStartDelete] = useState(false);
@@ -344,13 +343,13 @@ const LoginView = ({ setData, ...item }) => {
   const [showed, setShowed] = useState(false);
   const [hoverTrash, setHoverTrash] = useState(false);
   const [hoverEdit, setHoverEdit] = useState(false);
-
-  const deleteItem = () => {
-    setData((prev) => prev.filter((d) => d.id !== item.id));
-  };
+  // const [anim, setAnim] = useState("start");
 
   useEffect(() => setShowPassword(false), [isOpen]);
   useEffect(() => setShowed(true), []);
+  useEffect(() => {
+    if (holdProgress === 100) setRemovingId(item.id);
+  }, [holdProgress]);
   useEffect(() => {
     let interval;
 
@@ -360,13 +359,16 @@ const LoginView = ({ setData, ...item }) => {
       return;
     }
 
+    if (holdProgress === 100) {
+      interval && clearInterval(interval);
+      return;
+    }
+
     interval = setInterval(() => {
+      // setHoldProgress((prev) => prev < 100 && prev + 1);
       setHoldProgress((prev) => {
         if (prev < 100) {
           return prev + 1;
-        } else {
-          deleteItem();
-          return 100;
         }
       });
     }, 15);
@@ -379,10 +381,17 @@ const LoginView = ({ setData, ...item }) => {
 
   return (
     <motion.li
-      initial={{ width: "0%", opacity: 0, marginTop: 10 }}
-      animate={{ width: "100%", opacity: 1, marginTop: 10 }}
-      exit={{ x: "100%", opacity: 0, height: 0, marginTop: 0 }}
+      key={item.id}
+      initial={!isRemoving && { width: "0%", opacity: 0, marginTop: 10 }}
+      variants={{
+        start: { width: "100%", opacity: 1, marginTop: 10 },
+        delete: { x: "100%", opacity: 0, height: 0, marginTop: 0 },
+      }}
+      animate={isRemoving ? "delete" : "start"}
       transition={{ delay: showed ? 0 : item.index * 0.1 }}
+      onAnimationComplete={(def) => {
+        if (isRemoving && def === "delete") onRemoveComplete?.();
+      }}
       className={`${
         holdProgress !== 100 && "middle-btn-3"
       } rounded-[30px] flex flex-col justify-center items-center relative overflow-hidden ${
@@ -401,7 +410,12 @@ const LoginView = ({ setData, ...item }) => {
         animate={{
           height: isOpen ? height + 60 : 60,
         }}
-        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        transition={{
+          type: "spring",
+          visualDuration: 0.25,
+          bounce: 0.35,
+        }}
+        // transition={{ type: "spring", stiffness: 300, damping: 20 }}
       >
         <div className="flex shrink-0 w-full min-w-[340px] group">
           <h1

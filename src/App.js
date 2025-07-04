@@ -1,12 +1,15 @@
 import Router from "./pages/Router";
 import Layout from "./components/Layout";
+import { ContextProvider } from "./components/Context";
 
 const App = () => {
   return (
     <Layout>
-      <Router />
+      <ContextProvider>
+        <Router />
+      </ContextProvider>
     </Layout>
   );
-}
+};
 
 export default App;

@@ -40,7 +40,7 @@ export default function Main() {
           >
             {editor.type === "login" ? (
               <LoginForm
-                onCancel={() => {
+                onClose={() => {
                   setTimeout(() => {
                     setEditor((prev) => ({ ...prev, show: false }));
                     setPanelState("active");
@@ -49,7 +49,7 @@ export default function Main() {
               />
             ) : (
               <NoteForm
-                onCancel={() => {
+                onClose={() => {
                   setTimeout(() => {
                     setEditor((prev) => ({ ...prev, show: false }));
                     setPanelState("active");
