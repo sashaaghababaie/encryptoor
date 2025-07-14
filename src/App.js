@@ -1,15 +1,11 @@
-import Router from "./pages/Router";
-import Layout from "./components/Layout";
+import Router from "./router/Router";
+
 import { ContextProvider } from "./components/Context";
 
-const App = () => {
+export default function App() {
   return (
-    <Layout>
-      <ContextProvider>
-        <Router />
-      </ContextProvider>
-    </Layout>
+    <ContextProvider>
+      <Router />
+    </ContextProvider>
   );
-};
-
-export default App;
+}

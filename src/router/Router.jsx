@@ -4,7 +4,7 @@ import { HashRouter, Routes, Route } from "react-router-dom";
 // import Login from "./Login";
 // import Register from "./Register";
 // import Start from "./Start";
-import Main from "./Main";
+import Main from "../pages/Main";
 
 const Router = () => {
   return (

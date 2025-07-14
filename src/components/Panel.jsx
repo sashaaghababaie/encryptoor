@@ -1,4 +1,4 @@
-import { motion, AnimatePresence, stagger } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { useEffect, useState } from "react";
 import { Copiable } from "./Copiable";
 import {
@@ -10,95 +10,23 @@ import {
 } from "react-icons/lu";
 import { useAppContext } from "./Context";
 
-const mock = [
-  {
-    id: "0",
-    title: "Login Info",
-    type: "login",
-    username: "user",
-    password: "password",
-    website: "https://example.com",
-  },
-  {
-    id: "1",
-    title: "Another isti pitst long Login credentials for safety and security",
-    type: "login",
-    username: "anotherUser",
-    password: "anotherPassword",
-    website: "https://another-example.com",
-  },
-  {
-    id: "2",
-    title: "Another Login yet",
-    type: "login",
-    username: "anotherUser",
-    password: "anotherPassword",
-    website: "",
-  },
-  {
-    id: "3",
-    title: "Secure Note",
-    type: "note",
-    note: "this is another secure note and is really serius, this is another secure note and its really important,this is another secure note and is really serius, this is another secure note and its really importantthis is another secure note and is really serius, this is another secure note and its really importantthis is another secure note and is really serius, this is another secure note and its really importantthis is another secure note and is really serius, this is another secure note and its really importantthis is another secure note and is really serius, this is another secure note and its really importantthis is another secure note and is really serius, this is another secure note and its really importantthis is another secure note and is really serius, this is another secure note and its really importantthis is another secure note and is really serius, this is another secure note and its really important",
-  },
-  {
-    id: "4",
-    title: "Another Login yet",
-    type: "login",
-    username: "",
-    password: "anotherPassword",
-    website: "",
-  },
-
-  {
-    id: "5",
-    title: "Secure Note 2",
-    type: "note",
-    note: "this is a secure note",
-  },
-  {
-    id: "6",
-    title: "Another Login yet",
-    type: "login",
-    username: "",
-    password: "anotherPassword",
-    website: "",
-  },
-  {
-    id: "7",
-    title: "Another Login yet",
-    type: "login",
-    username: "",
-    password: "anotherPassword",
-    website: "",
-  },
-];
-
 export const Panel = ({
   setEditorState,
   setPanelState,
   editor,
   panelState,
 }) => {
-  // const [data, setData] = useState(mock);
   const [removingId, setRemovingId] = useState("");
-
+  const [showFirstTime, setShowFirstTime] = useState(false);
   const { data, setData } = useAppContext();
 
-  useEffect(() => {
-    (async () => {
-      const res = await window.api.decryptVault("1234");
-
-      if (res.success) {
-        setData(res.data);
-      }
-    })();
-  }, []);
+  useEffect(() => setShowFirstTime(true), []);
 
   return (
     <motion.div
       className={`px-2 py-2 mt-2 absolute w-full left-0 top-16 z-20 backdrop-blur-md text-white border border-lime-100/10 bg-lime-500/10 rounded-3xl`}
       initial={{ y: 400, opacity: 0.5 }}
+      transition={{ delay: !showFirstTime ? 0.3 : 0 }}
       animate={panelState}
       variants={{
         active: { y: 0, opacity: 1 },

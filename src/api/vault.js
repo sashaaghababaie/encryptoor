@@ -9,7 +9,6 @@ const {
 const fs = require("fs");
 const { app } = require("electron");
 const path = require("path");
-// === Constants ===
 
 // const VAULT_PATH = path.join(app.getPath("userData"), "vault.enc");
 const VAULT_PATH = path.join(app.getPath("desktop"), "vault.enc");
@@ -19,7 +18,6 @@ const AUTH_TAG_SIZE = 16; // bytes
 const HMAC_SIZE = 32; // bytes (SHA-256 output)
 const PBKDF2_ROUNDS = 100_000;
 
-// === Helpers ===
 function deriveKey(password, salt) {
   return pbkdf2Sync(password, salt, PBKDF2_ROUNDS, 32, "sha256");
   // return scryptSync(password, salt, 32, { N: 2 ** 15, r: 8, p: 1 });
@@ -29,7 +27,21 @@ function computeHMAC(hmacKey, data) {
   return createHmac("sha256", hmacKey).update(data).digest();
 }
 
-// === Encrypt and Save Vault ===
+/**
+ *
+ * @returns
+ */
+async function init() {
+  if (fs.existsSync(VAULT_PATH)) return true;
+  return false;
+}
+
+/**
+ *
+ * @param {*} masterPassword
+ * @param {*} vaultData
+ * @returns
+ */
 async function encryptVault(masterPassword, vaultData) {
   try {
     const salt = randomBytes(SALT_SIZE);
@@ -62,7 +74,11 @@ async function encryptVault(masterPassword, vaultData) {
   // console.log("🔐 Vault saved with encryption + HMAC.");
 }
 
-// === Decrypt Vault and Return Data ===
+/**
+ *
+ * @param {*} masterPassword
+ * @returns
+ */
 async function decryptVault(masterPassword) {
   if (!fs.existsSync(VAULT_PATH)) {
     return { success: true, data: [] };
@@ -104,4 +120,4 @@ async function decryptVault(masterPassword) {
   }
 }
 
-module.exports = { decryptVault, encryptVault };
+module.exports = { init, decryptVault, encryptVault };

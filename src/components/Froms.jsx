@@ -11,15 +11,13 @@ export const LoginForm = ({ onClose, initData }) => {
   const [loginData, setLoginData] = useState(
     initData || { username: "", password: "", website: "", title: "" }
   );
-  // const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/;
-  const pass = "1234";
+
+  const { setData, data, passKey } = useAppContext();
 
   const handleInput = (e) => {
     error[e.target.name] = "";
     setLoginData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
-
-  const { setData, data, passKey } = useAppContext();
 
   const handleSave = async () => {
     if (!loginData.title) {
@@ -53,19 +51,19 @@ export const LoginForm = ({ onClose, initData }) => {
         newData.push(loginInfo);
       }
       // setSuccess(true);
-      await window.api.encryptVault(pass, newData);
+      await window.api.encryptVault(passKey, newData);
 
-      onClose();
+      // onClose();
 
-      const res = await window.api.decryptVault(pass);
+      const res = await window.api.decryptVault(passKey);
 
       if (res.success) {
         setData(res.data);
+        onClose();
       } else {
         console.log("error");
+        return;
       }
-
-      // onClose();
     } catch (error) {
       console.log("error");
       return;
@@ -76,9 +74,9 @@ export const LoginForm = ({ onClose, initData }) => {
     <div className="relative flex flex-col h-full">
       {/* {success && (
         <motion.div
-          className="w-full text-8xl h-full absolute bg-white/10 backdrop-blur-lg inset-0 rounded-3xl"
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 0.5 }}
+          className="w-44 h-44 text-8xl rounded-full absolute bg-white/10 backdrop-blur-lg inset-0"
+          initial={{ y: 0, scale: 0, opacity: 1 }}
+          animate={{ y: 100, scale: 1, opacity: 0 }}
         ></motion.div>
       )} */}
       <h1 className="font-bold text-lg text-white">Add Login info</h1>
@@ -134,10 +132,6 @@ export const LoginForm = ({ onClose, initData }) => {
           </motion.button>
           <motion.button
             {...buttonAnim}
-            // animate={{
-            //   ...buttonAnim.animate,
-            //   transition: buttonAnim.transition,
-            // }}
             className="shadow-lg shadow-emerald-300/20 mt-4 w-full h-12 border border-transparent rounded-full bg-emerald-300 text-black font-bold"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -156,14 +150,12 @@ export const NoteForm = ({ onClose, initData }) => {
   const [noteData, setNoteData] = useState(initData || { note: "", title: "" });
   const [error, setError] = useState({ title: "" });
 
-  const pass = "1234";
+  const { setData, data, passKey } = useAppContext();
 
   const handleInput = (e) => {
     error[e.target.name] = "";
     setNoteData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
-
-  const { setData, data, passKey } = useAppContext();
 
   const handleSave = async () => {
     if (!noteData.title) {
@@ -197,17 +189,17 @@ export const NoteForm = ({ onClose, initData }) => {
         newData.push(noteInfo);
       }
 
-      await window.api.encryptVault(pass, newData);
+      await window.api.encryptVault(passKey, newData);
 
-      const res = await window.api.decryptVault(pass);
+      const res = await window.api.decryptVault(passKey);
 
       if (res.success) {
         setData(res.data);
+        onClose();
       } else {
         console.log("error");
+        return;
       }
-
-      onClose();
     } catch (error) {
       console.log("error");
       return;
@@ -248,10 +240,6 @@ export const NoteForm = ({ onClose, initData }) => {
           </motion.button>
           <motion.button
             {...buttonAnim}
-            // animate={{
-            //   ...buttonAnim.animate,
-            //   transition: buttonAnim.transition,
-            // }}
             className="shadow-lg shadow-emerald-300/20 mt-4 w-full h-12 border border-transparent rounded-full bg-emerald-300 text-black font-bold"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}

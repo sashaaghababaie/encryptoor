@@ -2,7 +2,7 @@
 const path = require("path");
 const { ipcMain, app, BrowserWindow } = require("electron");
 const isDev = require("electron-is-dev");
-const { encryptVault, decryptVault } = require("../src/api/vault");
+const { encryptVault, decryptVault, init } = require("../src/api/vault");
 
 function createWindow() {
   // Create the browser window.
@@ -60,6 +60,10 @@ ipcMain.handle("vault:encrypt", async (_event, passkey, data) => {
 
 ipcMain.handle("vault:decrypt", async (_event, passkey) => {
   return await decryptVault(passkey);
+});
+
+ipcMain.handle("vault:init", async (_event) => {
+  return await init();
 });
 
 //examples

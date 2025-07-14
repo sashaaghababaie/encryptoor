@@ -16,8 +16,9 @@ const { ipcRenderer, contextBridge } = require("electron");
 // });
 
 contextBridge.exposeInMainWorld("api", {
+  init: async () => await ipcRenderer.invoke("vault:init"),
   encryptVault: async (passkey, data) =>
-    ipcRenderer.invoke("vault:encrypt", passkey, data),
-
-  decryptVault: async (passkey) => ipcRenderer.invoke("vault:decrypt", passkey),
+    await ipcRenderer.invoke("vault:encrypt", passkey, data),
+  decryptVault: async (passkey) =>
+    await ipcRenderer.invoke("vault:decrypt", passkey),
 });
