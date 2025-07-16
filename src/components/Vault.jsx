@@ -1,155 +1,34 @@
-import { motion } from "motion/react";
-import { AnimatePresence } from "motion/react";
-import { LuFilePlus, LuCircleUserRound } from "react-icons/lu";
-import { useState, useEffect, useContext } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { LuFilePlus, LuCircleUserRound, LuLock } from "react-icons/lu";
+import { useState, useEffect } from "react";
 import { Panel } from "./Panel";
 import { LoginForm, NoteForm } from "./Froms";
-import Layout from "./Layout";
-import { PasswordInput } from "./Inputs";
-import { useAppContext } from "./Context";
-import { LuLock } from "react-icons/lu";
-const Door = ({ delay, duration, state }) => {
-  return (
-    <>
-      <motion.div
-        className="absolute left-0 top-0 w-1/2 h-full bg-zinc-800 z-30"
-        initial={
-          state === "open" ? { marginLeft: "-0.1%" } : { marginLeft: "-50%" }
-        }
-        animate={
-          state === "open"
-            ? {
-                marginLeft: "-50%",
-              }
-            : {
-                marginLeft: "-0.1%",
-              }
-        }
-        transition={{ duration, delay }}
-      ></motion.div>
-      <motion.div
-        className="top-0 absolute right-0 w-1/2 h-full bg-zinc-800 z-30 "
-        initial={
-          state === "open" ? { marginRight: "-0.1%" } : { marginRight: "-50%" }
-        }
-        animate={
-          state === "open"
-            ? {
-                marginRight: "-50%",
-              }
-            : {
-                marginRight: "-0.1%",
-              }
-        }
-        transition={{ duration, delay }}
-      ></motion.div>
-      <motion.div
-        className="top-0 absolute right-0 w-full h-full bg-black z-30 "
-        initial={state === "open" ? { opacity: 0.5 } : { opacity: 0 }}
-        animate={state === "open" ? { opacity: 0 } : { opacity: 0.5 }}
-        transition={{ duration: duration - 0.1, delay: delay + duration - 0.3 }}
-      ></motion.div>
-    </>
-  );
-};
-
-const Lock = ({ setOpen, state }) => {
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [buttonAnim, setButtonAnim] = useState({ animate: {}, transition: {} });
-
-  const { setData, setPassKey } = useAppContext();
-
-  const handleOpenVault = async () => {
-    try {
-      if (password.length === 0) {
-        setError("Please type password");
-        throw new Error("NO_PASSWORD");
-      }
-      const res = await window.api.decryptVault(password);
-      if (res.success) {
-        setPassKey(password);
-        setData(res.data);
-        setTimeout(() => setOpen(true), 1);
-      } else {
-        setError("Wrong Password");
-        throw new Error("WRONG_PASSWORD");
-      }
-    } catch (err) {
-      setButtonAnim({
-        animate: { x: [null, -12, 10, -8, 6, 0] },
-        transition: { duration: 0.25, times: [0, 0.2, 0.4, 0.6, 0.8, 1] },
-      });
-      setTimeout(() => {
-        setButtonAnim({});
-      }, 200);
-    }
-  };
-
-  return (
-    <div className="absolute p-4 inset-0 z-50 flex items-center justify-center">
-      <motion.div
-        className="flex p-4 flex-col gap-4 w-full max-w-[600px] text-white border border-lime-100/10 bg-lime-700/10 rounded-3xl"
-        initial={
-          state === "close" ? { opacity: 0, y: 200 } : { opacity: 1, y: 0 }
-        }
-        animate={
-          state === "open" ? { opacity: 0, y: 200 } : { opacity: 1, y: 0 }
-        }
-        // animate={{ opacity: 1, y: 0 }}
-        // exit={{ opacity: 0, y: 200 }}
-      >
-        <div className="mb-4">
-          <h2 className="font-bold text-sm">
-            Enter Password to open the vault
-          </h2>
-        </div>
-
-        <PasswordInput
-          label="Password"
-          name="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-
-        <div className="mt-8">
-          <p className="text-xs text-orange-400">
-            If you forget the password, we cannot recover it for you.
-          </p>
-          <motion.button
-            {...buttonAnim}
-            className="shadow-lg shadow-emerald-300/20 mt-4 w-full h-12 border border-transparent rounded-full bg-emerald-300 text-black font-bold"
-            whileHover={{ scale: 1.05 }}
-            onClick={() => handleOpenVault()}
-          >
-            Open Vault
-          </motion.button>
-          <p className="text-rose-500 h-4 py-2 text-xs font-bold">{error}</p>
-        </div>
-      </motion.div>
-    </div>
-  );
-};
+import Layout from "./layout/Layout";
+import { Lock, ChangePassword } from "./Lock";
+import { useAppContext } from "../context/Context";
+import { VaultDoor } from "./anim/VaultDoor";
 
 const OpenVault = ({ setLock }) => {
   const [panelState, setPanelState] = useState("active");
+  const [hoverLock, setHoverLock] = useState(false);
   const [editor, setEditor] = useState({
     show: false,
     type: "login",
     animate: "show",
     initData: null,
   });
+
   const { data, setData, setPassKey, passKey } = useAppContext();
 
-  const lock = async () => {
-    const res = await window.api.decryptVault(passKey, data);
+  const handleLock = async () => {
+    const res = await window.api.encryptVault(passKey, data);
     if (res.success) {
       setPassKey("");
       setData([]);
       setLock();
     }
   };
-  const [hoverLock, setHoverLock] = useState(false);
+
   return (
     <Layout>
       <motion.div
@@ -263,10 +142,10 @@ const OpenVault = ({ setLock }) => {
           onHoverEnd={() => setHoverLock(false)}
           whileHover={{ width: 126 }}
           transition={{ type: "spring", stiffness: 300, damping: 20 }}
-          onClick={() => lock()}
+          onClick={() => handleLock()}
           className="w-[52px] h-[52px]
-                    rounded-full bg-rose-800 font-bold hover:bg-rose-600 text-white/30
-                    text-lg flex items-center justify-center hover:text-white/70 overflow-hidden"
+                    rounded-full bg-rose-800 font-bold hover:bg-rose-600 text-white
+                    text-lg flex items-center justify-center hover:text-white overflow-hidden"
         >
           {hoverLock ? (
             <span className="select-none block text-xs font-bold w-[126px] shrink-0">
@@ -282,15 +161,15 @@ const OpenVault = ({ setLock }) => {
 };
 
 export default function Vault() {
-  const [open, setOpen] = useState(false);
+  const [state, setState] = useState("close");
   const [offload, setOffload] = useState(false);
 
   useEffect(() => {
-    if (!open) return;
+    if (state !== "open") return;
 
     const timer = setTimeout(() => setOffload(true), 300);
     return () => clearTimeout(timer);
-  }, [open]);
+  }, [state]);
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-black">
@@ -298,18 +177,22 @@ export default function Vault() {
         <AnimatePresence>
           {!offload && (
             <>
-              <Door state={open ? "open" : "close"} duration={0.2} delay={0} />
-              {/* {!open && <Lock setOpen={setOpen} />} */}
-              <Lock setOpen={setOpen} state={open ? "open" : "close"} />
+              <VaultDoor state={state} duration={0.2} delay={0} />
+              <Lock setState={setState} state={state} />
+              <AnimatePresence>
+                {state === "disable" && (
+                  <ChangePassword onClose={() => setState("close")} />
+                )}
+              </AnimatePresence>
             </>
           )}
         </AnimatePresence>
         <AnimatePresence>
-          {open && (
+          {state === "open" && (
             <OpenVault
               setLock={() => {
                 setOffload(false);
-                setOpen(false);
+                setState("close");
                 // setTimeout(() => setOpen(false), 1);
               }}
             />
@@ -320,6 +203,11 @@ export default function Vault() {
   );
 }
 
+/**
+ *
+ * @param {*} param0
+ * @returns
+ */
 export const ActionButton = ({ children, ...props }) => {
   return (
     <motion.button

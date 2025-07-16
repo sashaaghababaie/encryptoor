@@ -1,6 +1,5 @@
 import Router from "./router/Router";
-
-import { ContextProvider } from "./components/Context";
+import { ContextProvider } from "./context/Context";
 
 export default function App() {
   return (

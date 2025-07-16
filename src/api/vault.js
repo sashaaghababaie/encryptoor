@@ -69,7 +69,7 @@ async function encryptVault(masterPassword, vaultData) {
     await fs.promises.writeFile(VAULT_PATH, finalBuffer);
     return { success: true };
   } catch (err) {
-    return { success: false };
+    return { success: false, error: err.message };
   }
   // console.log("🔐 Vault saved with encryption + HMAC.");
 }
@@ -116,7 +116,7 @@ async function decryptVault(masterPassword) {
 
     return { success: true, data: JSON.parse(decrypted.toString("utf8")) };
   } catch (err) {
-    return { success: false, data: [] };
+    return { success: false, error: err.message };
   }
 }
 

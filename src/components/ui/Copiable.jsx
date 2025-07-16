@@ -1,5 +1,4 @@
 import { CopyToClipboard } from "react-copy-to-clipboard";
-
 import { useState, useEffect } from "react";
 import { LuCopy, LuCopyCheck } from "react-icons/lu";
 

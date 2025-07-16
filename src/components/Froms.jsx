@@ -1,9 +1,14 @@
 import { useState } from "react";
 import { motion } from "motion/react";
 import { nanoid } from "nanoid";
-import { useAppContext } from "./Context";
-import { TextInput, PasswordInput } from "./Inputs";
+import { useAppContext } from "../context/Context";
+import { TextInput, PasswordInput } from "./ui/Inputs";
 
+/**
+ * Input Form for store a LoginInfo
+ * @param {*} param0
+ * @returns
+ */
 export const LoginForm = ({ onClose, initData }) => {
   // const [success, setSuccess] = useState(false);
   const [error, setError] = useState({ title: "" });
@@ -145,6 +150,11 @@ export const LoginForm = ({ onClose, initData }) => {
   );
 };
 
+/**
+ * Input Form for store a Note
+ * @param {*} param0
+ * @returns
+ */
 export const NoteForm = ({ onClose, initData }) => {
   const [buttonAnim, setButtonAnim] = useState({ animate: {}, transition: {} });
   const [noteData, setNoteData] = useState(initData || { note: "", title: "" });
