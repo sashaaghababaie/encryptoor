@@ -226,7 +226,7 @@ export const ChangePassword = ({ onClose }) => {
               whileHover={{ scale: 1.05 }}
               onClick={handleChangePassword}
             >
-              Create Vault
+              Chane Password
             </motion.button>
           </div>
         </div>

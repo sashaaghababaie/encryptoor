@@ -6,7 +6,10 @@ import {
   LuEyeOff,
   LuTrash,
   LuPenLine,
+  LuFilePlus,
+  LuCircleUserRound,
 } from "react-icons/lu";
+
 import { Copiable } from "./ui/Copiable";
 
 export const ItemView = (item) => {
@@ -101,10 +104,13 @@ const NoteView = ({
         <div className="flex shrink-0 w-full min-w-[340px] group">
           <h1
             onClick={() => setTimeout(() => setOpen(!isOpen), 10)}
-            className={`select-none cursor-pointer h-[60px] px-4 w-full flex items-center border-b transition-all duration-200 font-bold text-sm ${
+            className={`gap-2 select-none cursor-pointer h-[60px] pr-4 pl-1 w-full flex items-center border-b transition-all duration-200 font-bold text-sm ${
               isOpen ? "border-b-white/50" : "border-b-transparent"
             }`}
           >
+            <span className="bg-emerald-500/30 shrink-0 h-[52px] w-[52px] rounded-full flex items-center justify-center">
+              <LuFilePlus className="w-6 h-6" />
+            </span>
             {item.title}
           </h1>
 
@@ -283,11 +289,14 @@ const LoginView = ({
       >
         <div className="flex shrink-0 w-full min-w-[340px] group">
           <h1
-            onClick={() => setTimeout(() => setOpen(!isOpen), 1)}
-            className={`select-none cursor-pointer h-[60px] px-4 w-full flex items-center border-b transition-all duration-200 font-bold text-sm ${
+            onClick={() => setTimeout(() => setOpen(!isOpen), 10)}
+            className={`gap-2 select-none cursor-pointer h-[60px] pr-4 pl-1 w-full flex items-center border-b transition-all duration-200 font-bold text-sm ${
               isOpen ? "border-b-white/50" : "border-b-transparent"
             }`}
           >
+            <span className="bg-blue-500/30 shrink-0 h-[52px] w-[52px] rounded-full flex items-center justify-center">
+              <LuCircleUserRound className="w-6 h-6" />
+            </span>
             {item.title}
           </h1>
 
