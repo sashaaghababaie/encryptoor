@@ -28,7 +28,7 @@ export const Panel = ({
       variants={{
         active: { y: 0, opacity: 1 },
         topover: { y: 30, opacity: 1 },
-        inactive: { y: 400, opacity: 0.5 },
+        inactive: { y: 400, opacity: 1 },
       }}
       onClick={() => {
         if (editor.show) {
@@ -51,6 +51,7 @@ export const Panel = ({
 
       <div className="pb-2 flex gap-2 items-center">
         <motion.input
+          placeholder="Search..."
           className="h-8 w-full rounded-full bg-zinc-500/10 text-white/70 px-2"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -104,10 +105,10 @@ export const Panel = ({
             {
               // (results) => <>{JSON.stringify(results)}</>
               (results) =>
-                results.map((r) => (
-                  <>
+                results.map((r, i) => (
+                  <div key={i}>
                     {r.data.length > 0 && (
-                      <div className="pb-4">
+                      <div key={`data-${i}`} className="pb-4">
                         {r.title.length > 0 && (
                           <h1 className="text-xs text-white/50 border-white/50 mt-2 border-b font-bold">
                             {r.title}
@@ -115,10 +116,10 @@ export const Panel = ({
                         )}
                         {r.data.map((item, index) => (
                           <ItemView
+                            key={item.id}
                             setPanelState={setPanelState}
                             setEditorState={setEditorState}
                             removingId={removingId}
-                            key={item.id}
                             index={index}
                             setRemovingId={setRemovingId}
                             isRemoving={removingId === item.id}
@@ -147,7 +148,7 @@ export const Panel = ({
                         ))}
                       </div>
                     )}
-                  </>
+                  </div>
                 ))
             }
           </ItemViewContainer>

@@ -55,7 +55,7 @@ const OpenVault = ({ setLock }) => {
               }}
               className={`${
                 editor.animate === "disable" ? "z-10" : "z-30"
-              } border border-lime-100/10 bg-lime-500/10 absolute top-0 p-4 left-0 w-full h-[464px] rounded-3xl`}
+              } border border-lime-100/10 bg-white/10 absolute top-0 p-4 left-0 w-full h-[464px] rounded-3xl`}
               initial={{ opacity: 0, scale: 0.15 }}
               animate={editor.animate}
               exit={{ opacity: 0, scale: 0.15 }}

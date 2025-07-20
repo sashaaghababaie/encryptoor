@@ -51,7 +51,6 @@ const NoteView = ({
     interval = setInterval(() => {
       setHoldProgress((prev) => prev < 100 && prev + 1);
     }, 15);
-    console.log(interval);
     return () => {
       if (interval) clearInterval(interval);
     };
@@ -60,9 +59,10 @@ const NoteView = ({
   return (
     <motion.li
       key={item.id}
-      initial={{ width: "0%", opacity: 0, marginTop: 10 }}
+      initial={{ x: 0, width: "0%", opacity: 0, marginTop: 10 }}
       variants={{
         start: {
+          x: 0,
           width: "100%",
           opacity: 1,
           marginTop: 10,

@@ -84,7 +84,7 @@ export const LoginForm = ({ onClose, initData }) => {
           animate={{ y: 100, scale: 1, opacity: 0 }}
         ></motion.div>
       )} */}
-      <h1 className="font-bold text-lg text-white">Add Login info</h1>
+      <h1 className="font-bold text-lg text-white">Add Login info</h1>{" "}
       <div className="flex flex-col mt-4 text-sm h-full ">
         <div className="flex flex-col gap-2 h-full justify-between py-8">
           <TextInput
@@ -126,6 +126,7 @@ export const LoginForm = ({ onClose, initData }) => {
             type="text"
           />
         </div>
+        <div className="h-full"></div>
         <div className="flex gap-4">
           <motion.button
             onClick={onClose}
