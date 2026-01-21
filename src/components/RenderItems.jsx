@@ -30,11 +30,9 @@ const NoteView = ({
   const [isOpen, setOpen] = useState(false);
   const [startDelete, setStartDelete] = useState(false);
   const [holdProgress, setHoldProgress] = useState(0);
-  // const [showed, setShowed] = useState(false);
   const [hoverTrash, setHoverTrash] = useState(false);
   const [hoverEdit, setHoverEdit] = useState(false);
 
-  // useEffect(() => setShowed(true), []);
   useEffect(() => {
     if (holdProgress === 100) setRemovingId(item.id);
   }, [holdProgress, item.id]);
@@ -51,9 +49,8 @@ const NoteView = ({
     interval = setInterval(() => {
       setHoldProgress((prev) => prev < 100 && prev + 1);
     }, 15);
-    return () => {
-      if (interval) clearInterval(interval);
-    };
+
+    return () => clearInterval(interval);
   }, [startDelete]);
 
   return (
@@ -210,13 +207,10 @@ const LoginView = ({
   const [showPassword, setShowPassword] = useState(false);
   const [startDelete, setStartDelete] = useState(false);
   const [holdProgress, setHoldProgress] = useState(0);
-  // const [showed, setShowed] = useState(false);
   const [hoverTrash, setHoverTrash] = useState(false);
   const [hoverEdit, setHoverEdit] = useState(false);
 
   useEffect(() => setShowPassword(false), [isOpen]);
-
-  // useEffect(() => setShowed(true), []);
 
   useEffect(() => {
     if (holdProgress === 100) setRemovingId(item.id);
@@ -235,9 +229,7 @@ const LoginView = ({
       setHoldProgress((prev) => prev < 100 && prev + 1);
     }, 15);
 
-    return () => {
-      if (interval) clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, [startDelete]);
 
   const height =

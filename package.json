@@ -1,6 +1,6 @@
 {
   "name": "local-encryptor",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "author": {
     "name": "Sasha Aghababaie",
     "description": "A local encryptor for secure texts."

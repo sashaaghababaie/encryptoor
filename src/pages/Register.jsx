@@ -3,7 +3,7 @@ import InputPassword from "../components/InputPassword";
 import Button from "../components/Button";
 import { AiFillSafetyCertificate } from "react-icons/ai";
 
-const Register = () => {
+export default function Register() {
   const [newPass, setNewPass] = useState("");
   const [checkPass, setCheckPass] = useState("");
   const [matched, setMatched] = useState(false);
@@ -56,6 +56,4 @@ const Register = () => {
       </div>
     </div>
   );
-};
-
-export default Register;
+}

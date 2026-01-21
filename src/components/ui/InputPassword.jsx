@@ -4,6 +4,7 @@ import { VscEyeClosed } from "react-icons/vsc";
 
 const InputPassword = ({ className, ...props }) => {
   const [show, setShow] = useState(false);
+
   return (
     <div className="flex border-b w-full">
       <input

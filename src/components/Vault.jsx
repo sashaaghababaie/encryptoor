@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "motion/react";
-import { LuFilePlus, LuCircleUserRound, LuLock } from "react-icons/lu";
+import { LuFilePlus, LuCircleUserRound, LuLock, LuShare } from "react-icons/lu";
 import { useState, useEffect } from "react";
 import { Panel } from "./Panel";
 import { LoginForm, NoteForm } from "./Froms";
@@ -11,6 +11,7 @@ import { VaultDoor } from "./anim/VaultDoor";
 const OpenVault = ({ setLock }) => {
   const [panelState, setPanelState] = useState("active");
   const [hoverLock, setHoverLock] = useState(false);
+  const [hoverBackup, setHoverBackup] = useState(false);
   const [editor, setEditor] = useState({
     show: false,
     type: "login",
@@ -18,10 +19,11 @@ const OpenVault = ({ setLock }) => {
     initData: null,
   });
 
-  const { data, setData, setPassKey, passKey } = useAppContext();
+  const { data, setData, passKey, setPassKey } = useAppContext();
 
   const handleLock = async () => {
     const res = await window.api.encryptVault(passKey, data);
+
     if (res.success) {
       setPassKey("");
       setData([]);
@@ -136,7 +138,7 @@ const OpenVault = ({ setLock }) => {
           editor={editor}
         />
       </motion.div>
-      <div className="fixed right-2 bottom-2 z-20">
+      <div className="fixed right-2 bottom-[64px] z-20">
         <motion.button
           onHoverStart={() => setHoverLock(true)}
           onHoverEnd={() => setHoverLock(false)}
@@ -153,6 +155,26 @@ const OpenVault = ({ setLock }) => {
             </span>
           ) : (
             <LuLock />
+          )}
+        </motion.button>
+      </div>
+      <div className="fixed right-2 bottom-2 z-20">
+        <motion.button
+          onHoverStart={() => setHoverBackup(true)}
+          onHoverEnd={() => setHoverBackup(false)}
+          whileHover={{ width: 126 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          onClick={() => handleLock()}
+          className="w-[52px] h-[52px]
+                    rounded-full bg-emerald-800 font-bold hover:bg-emerald-600 text-white
+                    text-lg flex items-center justify-center hover:text-white overflow-hidden"
+        >
+          {hoverBackup ? (
+            <span className="select-none block text-xs font-bold w-[126px] shrink-0">
+              Safe Backup
+            </span>
+          ) : (
+            <LuShare />
           )}
         </motion.button>
       </div>

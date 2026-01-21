@@ -43,9 +43,7 @@ export const CreateVault = ({ setInitialized, setShowLock }) => {
         setTimeout(() => {
           setInitialized(true);
         }, 300);
-        setTimeout(() => {
-          setShowLock(false);
-        }, 1);
+        setTimeout(() => setShowLock(false), 1);
       } else {
         throw new Error(res.error);
       }
@@ -56,9 +54,7 @@ export const CreateVault = ({ setInitialized, setShowLock }) => {
         transition: { duration: 0.25, times: [0, 0.2, 0.4, 0.6, 0.8, 1] },
       });
 
-      setTimeout(() => {
-        setButtonAnim({});
-      }, 200);
+      setTimeout(() => setButtonAnim({}), 200);
 
       return;
     }
