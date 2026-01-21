@@ -1,9 +1,10 @@
 {
   "name": "local-encryptor",
+  "displayName": "Encryptoor",
   "version": "0.1.9",
   "author": {
     "name": "Sasha Aghababaie",
-    "description": "A local encryptor for secure texts."
+    "description": "A local encryptor for secure stuff."
   },
   "private": true,
   "dependencies": {

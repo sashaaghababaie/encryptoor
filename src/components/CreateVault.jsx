@@ -35,14 +35,12 @@ export const CreateVault = ({ setInitialized, setShowLock }) => {
           id: "0",
           title: "Welcome",
           type: "note",
-          note: "hello encryptor",
+          note: "Hello Encryptoor",
         },
       ]);
 
       if (res.success) {
-        setTimeout(() => {
-          setInitialized(true);
-        }, 300);
+        setTimeout(() => setInitialized(true), 300);
         setTimeout(() => setShowLock(false), 1);
       } else {
         throw new Error(res.error);
