@@ -47,6 +47,7 @@ export const CreateVault = ({ setInitialized, setShowLock }) => {
       }
     } catch (err) {
       setError(err.message);
+
       setButtonAnim({
         animate: { x: [null, -12, 10, -8, 6, 0] },
         transition: { duration: 0.25, times: [0, 0.2, 0.4, 0.6, 0.8, 1] },
@@ -151,7 +152,7 @@ export const CreateVault = ({ setInitialized, setShowLock }) => {
                 hasSpecial() ? "text-emerald-400" : "text-rose-500"
               }`}
             >
-              -Add at least 1 special character e.g !@#$
+              -Add at least 1 special character e.g !@#$%^&*-_=+
             </li>
           </motion.ul>
         )}
