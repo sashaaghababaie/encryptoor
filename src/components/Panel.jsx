@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { useAppContext } from "../context/Context";
 import { ItemView } from "./RenderItems";
 import Fuse from "fuse.js";
+import Modal from "./ui/Modal";
+import { LuX } from "react-icons/lu";
 
 export const Panel = ({
   setEditorState,
@@ -14,6 +16,7 @@ export const Panel = ({
   const [showFirstTime, setShowFirstTime] = useState(false);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState(["login", "note"]);
+  const [error, setError] = useState("");
 
   const { data, setData, passKey } = useAppContext();
 
@@ -51,6 +54,11 @@ export const Panel = ({
         }
       }}
     >
+      <ErrorModal
+        isOpen={!!error}
+        errorMsg={error}
+        onClose={() => setError("")}
+      />
       {editor.show && editor.animate !== "disable" && (
         <div
           onClick={() => {
@@ -110,59 +118,70 @@ export const Panel = ({
           editor.animate === "disable" ? "pb-12" : "pb-4"
         }`}
       >
-        <motion.ul
-        // transition={{
-        //   delayChildren: stagger(0.1),
-        // }}
-        >
+        <motion.ul>
           <ItemViewContainer search={search} filter={filter}>
-            {
-              // (results) => <>{JSON.stringify(results)}</>
-              (results) =>
-                results.map((r, i) => (
-                  <div key={i}>
-                    {r.data.length > 0 && (
-                      <div key={`data-${i}`} className="pb-4">
-                        {r.title.length > 0 && (
-                          <h1 className="text-xs text-white/50 border-white/50 mt-2 border-b font-bold">
-                            {r.title}
-                          </h1>
-                        )}
-                        {r.data.map((item, index) => (
-                          <ItemView
-                            key={item.id}
-                            setPanelState={setPanelState}
-                            setEditorState={setEditorState}
-                            removingId={removingId}
-                            index={index}
-                            setRemovingId={setRemovingId}
-                            isRemoving={removingId === item.id}
-                            onRemoveComplete={() => {
-                              setData((prev) =>
-                                prev.filter((d) => d.id !== item.id)
+            {(results) =>
+              results.map((r, i) => (
+                <div key={i}>
+                  {r.data.length > 0 && (
+                    <div key={`data-${i}`} className="pb-4">
+                      {r.title.length > 0 && (
+                        <h1 className="text-xs text-white/50 border-white/50 mt-2 border-b font-bold">
+                          {r.title}
+                        </h1>
+                      )}
+                      {r.data.map((item, index) => (
+                        <ItemView
+                          key={item.id}
+                          setPanelState={setPanelState}
+                          setEditorState={setEditorState}
+                          removingId={removingId}
+                          index={index}
+                          setRemovingId={setRemovingId}
+                          isRemoving={removingId === item.id}
+                          onRemoveComplete={() => {
+                            setData((prev) =>
+                              prev.filter((d) => d.id !== item.id)
+                            );
+
+                            setRemovingId("");
+
+                            (async () => {
+                              const encRes = await window.api.encryptVault(
+                                passKey,
+                                data.filter((d) => d.id !== item.id)
                               );
-                              setRemovingId("");
-                              (async () => {
-                                await window.api.encryptVault(
-                                  passKey,
-                                  data.filter((d) => d.id !== item.id)
-                                );
 
-                                const res =
-                                  await window.api.decryptVault(passKey);
-
-                                if (res.success) {
-                                  setData(res.data);
+                              if (encRes.success === false) {
+                                if (encRes.error.match("ENOSPC")) {
+                                  setError(
+                                    "There is no space left on the device to complete this action."
+                                  );
+                                } else {
+                                  setError(
+                                    "Unexpected Error :(, Cannot delete right now."
+                                  );
                                 }
-                              })();
-                            }}
-                            {...item}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))
+                              }
+
+                              const decRes =
+                                await window.api.decryptVault(passKey);
+
+                              if (decRes.success === true) {
+                                setData(decRes.data);
+                              } else {
+                                setData(data);
+                                setError(decRes.error);
+                              }
+                            })();
+                          }}
+                          {...item}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))
             }
           </ItemViewContainer>
         </motion.ul>
@@ -201,5 +220,24 @@ const ItemViewContainer = ({ search, filter, children }) => {
     ].filter((results) =>
       filter.includes(results.title.toLowerCase().slice(0, -1))
     )
+  );
+};
+
+const ErrorModal = ({ isOpen, onClose, errorMsg }) => {
+  return (
+    <Modal isOpen={isOpen}>
+      <div>
+        <div className="flex justify-between">
+          <h1 className="font-bold text-base text-white">Something is wrong</h1>
+          <button
+            className="hover:text-white/50 duration-200"
+            onClick={onClose}
+          >
+            <LuX />
+          </button>
+        </div>
+        <p className="text-rose-500 text-sm my-12">{errorMsg}</p>
+      </div>
+    </Modal>
   );
 };

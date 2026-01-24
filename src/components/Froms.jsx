@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { nanoid } from "nanoid";
 import { useAppContext } from "../context/Context";
 import { TextInput, PasswordInput } from "./ui/Inputs";
@@ -10,8 +10,8 @@ import { TextInput, PasswordInput } from "./ui/Inputs";
  * @returns
  */
 export const LoginForm = ({ onClose, initData }) => {
-  // const [success, setSuccess] = useState(false);
-  const [error, setError] = useState({ title: "" });
+  const [error, setError] = useState("");
+  const [inputError, setInputError] = useState("");
   const [buttonAnim, setButtonAnim] = useState({ animate: {}, transition: {} });
   const [loginData, setLoginData] = useState(
     initData || { username: "", password: "", website: "", title: "" }
@@ -20,32 +20,27 @@ export const LoginForm = ({ onClose, initData }) => {
   const { setData, data, passKey } = useAppContext();
 
   const handleInput = (e) => {
-    setError({ title: "" });
+    setInputError("");
+    setError("");
     setLoginData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSave = async () => {
-    if (!loginData.title) {
-      setError((prev) => ({ ...prev, title: "Required" }));
-
-      setButtonAnim({
-        animate: { x: [null, -12, 10, -8, 6, 0] },
-        transition: { duration: 0.25, times: [0, 0.2, 0.4, 0.6, 0.8, 1] },
-      });
-
-      setTimeout(() => setButtonAnim({}), 250);
-
-      return;
-    }
-
-    const loginInfo = {
-      id: initData ? initData.id : nanoid(),
-      type: "login",
-      ...loginData,
-    };
-
     try {
-      const newData = [...data];
+      setError("");
+
+      if (!loginData.title) {
+        setInputError("Required");
+        throw new Error("required");
+      }
+
+      const loginInfo = {
+        id: initData ? initData.id : nanoid(),
+        type: "login",
+        ...loginData,
+      };
+
+      const newData = structuredClone(data);
 
       if (initData) {
         let edited = newData.find((d) => d.id === loginInfo.id);
@@ -53,41 +48,47 @@ export const LoginForm = ({ onClose, initData }) => {
       } else {
         newData.push(loginInfo);
       }
-      // setSuccess(true);
-      await window.api.encryptVault(passKey, newData);
 
-      // onClose();
+      const encRes = await window.api.encryptVault(passKey, newData);
 
-      const res = await window.api.decryptVault(passKey);
+      if (encRes.success === false) {
+        throw new Error(encRes.error);
+      }
 
-      if (res.success) {
-        setData(res.data);
+      const decRes = await window.api.decryptVault(passKey);
+
+      if (decRes.success === true) {
+        setData(decRes.data);
         onClose();
       } else {
-        console.log("error");
-        return;
+        throw new Error(decRes.error);
       }
-    } catch (error) {
-      console.log("error");
-      return;
+    } catch (err) {
+      if (err.message === "required") {
+        setError("");
+      } else if (err.message.match("ENOSPC")) {
+        setError("There is no space left on the device.");
+      } else {
+        setError("Unexpected error :(");
+      }
+
+      setButtonAnim({
+        animate: { x: [null, -12, 10, -8, 6, 0] },
+        transition: { duration: 0.25, times: [0, 0.2, 0.4, 0.6, 0.8, 1] },
+      });
+
+      setTimeout(() => setButtonAnim({}), 250);
     }
   };
 
   return (
     <div className="relative flex flex-col h-full">
-      {/* {success && (
-        <motion.div
-          className="w-44 h-44 text-8xl rounded-full absolute bg-white/10 backdrop-blur-lg inset-0"
-          initial={{ y: 0, scale: 0, opacity: 1 }}
-          animate={{ y: 100, scale: 1, opacity: 0 }}
-        ></motion.div>
-      )} */}
       <h1 className="font-bold text-lg text-white">Add Login info</h1>{" "}
       <div className="flex flex-col mt-4 text-sm h-full ">
         <div className="flex flex-col gap-2 h-full justify-between py-8">
           <TextInput
             name="title"
-            error={error.title}
+            error={inputError}
             shouldAlign
             label="Title:"
             value={loginData.title}
@@ -125,6 +126,18 @@ export const LoginForm = ({ onClose, initData }) => {
           />
         </div>
         <div className="h-full"></div>
+        <AnimatePresence>
+          {error && (
+            <motion.p
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 24, opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="text-sm flex items-center  text-rose-500"
+            >
+              {error}
+            </motion.p>
+          )}
+        </AnimatePresence>
         <div className="flex gap-4">
           <motion.button
             onClick={onClose}
@@ -157,37 +170,33 @@ export const LoginForm = ({ onClose, initData }) => {
 export const NoteForm = ({ onClose, initData }) => {
   const [buttonAnim, setButtonAnim] = useState({ animate: {}, transition: {} });
   const [noteData, setNoteData] = useState(initData || { note: "", title: "" });
-  const [error, setError] = useState({ title: "" });
+  const [inputError, setInputError] = useState("");
+  const [error, setError] = useState("");
 
   const { setData, data, passKey } = useAppContext();
 
   const handleInput = (e) => {
-    setError({ title: "" });
+    setError("");
+    setInputError("");
     setNoteData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSave = async () => {
-    if (!noteData.title) {
-      setError((prev) => ({ ...prev, title: "Required" }));
-
-      setButtonAnim({
-        animate: { x: [null, -12, 10, -8, 6, 0] },
-        transition: { duration: 0.25, times: [0, 0.2, 0.4, 0.6, 0.8, 1] },
-      });
-
-      setTimeout(() => setButtonAnim({}), 250);
-
-      return;
-    }
-
-    const noteInfo = {
-      id: initData ? initData.id : nanoid(),
-      type: "note",
-      ...noteData,
-    };
-
     try {
-      const newData = [...data];
+      setError("");
+
+      if (!noteData.title) {
+        setInputError("Required");
+        throw new Error("required");
+      }
+
+      const noteInfo = {
+        id: initData ? initData.id : nanoid(),
+        type: "note",
+        ...noteData,
+      };
+
+      const newData = structuredClone(data);
 
       if (initData) {
         let edited = newData.find((d) => d.id === noteInfo.id);
@@ -196,20 +205,35 @@ export const NoteForm = ({ onClose, initData }) => {
         newData.push(noteInfo);
       }
 
-      await window.api.encryptVault(passKey, newData);
+      const encRes = await window.api.encryptVault(passKey, newData);
 
-      const res = await window.api.decryptVault(passKey);
+      if (encRes.success === false) {
+        throw new Error(encRes.error);
+      }
 
-      if (res.success) {
-        setData(res.data);
+      const decRes = await window.api.decryptVault(passKey);
+
+      if (decRes.success === true) {
+        setData(decRes.data);
         onClose();
       } else {
-        console.log("error");
-        return;
+        throw new Error(decRes.error);
       }
-    } catch (error) {
-      console.log("error");
-      return;
+    } catch (err) {
+      if (err.message === "required") {
+        setError("");
+      } else if (err.message.match("ENOSPC")) {
+        setError("There is no space left on the device.");
+      } else {
+        setError("Unexpected error :(");
+      }
+
+      setButtonAnim({
+        animate: { x: [null, -12, 10, -8, 6, 0] },
+        transition: { duration: 0.25, times: [0, 0.2, 0.4, 0.6, 0.8, 1] },
+      });
+
+      setTimeout(() => setButtonAnim({}), 250);
     }
   };
 
@@ -217,9 +241,10 @@ export const NoteForm = ({ onClose, initData }) => {
     <div className="flex flex-col h-full">
       <h1 className="font-bold text-lg text-white">Add Secure note</h1>
       <div className="flex flex-col mt-4 text-sm h-full ">
-        <div className="flex flex-col gap-2 h-full justify-between py-8">
+        <div className="flex flex-col gap-2 h-full pt-8">
           <TextInput
-            error={error.title}
+            className="py-4"
+            error={inputError}
             label="Title"
             value={noteData.title}
             name="title"
@@ -233,9 +258,22 @@ export const NoteForm = ({ onClose, initData }) => {
             name="note"
             onChange={handleInput}
             placeholder="Your note..."
-            className="resize-none outline-none w-full p-4 rounded-3xl h-full shadow-inner-lg bg-zinc-700/20 text-zinc-300 font-bold shadow-white"
+            className="resize-none min-h-[200px] outline-none w-full p-4 rounded-3xl h-full shadow-inner-lg bg-zinc-700/20 text-zinc-300 font-bold shadow-white"
           />
         </div>
+        <div className="h-full"></div>
+        <AnimatePresence>
+          {error && (
+            <motion.p
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 24, opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="text-sm flex items-center  text-rose-500"
+            >
+              {error}
+            </motion.p>
+          )}
+        </AnimatePresence>
         <div className="flex gap-4">
           <motion.button
             onClick={onClose}

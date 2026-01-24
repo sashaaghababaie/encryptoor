@@ -67,7 +67,9 @@ async function _encryptVault(masterPassword, vaultData, path) {
 
     // Final file content: salt + hmac + encryptedPayload
     const finalBuffer = Buffer.concat([salt, hmac, encryptedPayload]);
+
     await fs.promises.writeFile(path, finalBuffer);
+
     return { success: true };
   } catch (err) {
     return { success: false, error: err.message };

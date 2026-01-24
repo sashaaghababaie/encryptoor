@@ -47,7 +47,18 @@ const NoteView = ({
     }
 
     interval = setInterval(() => {
-      setHoldProgress((prev) => prev < 100 && prev + 1);
+      setHoldProgress((prev) => {
+        if (prev < 100) {
+          return prev + 1;
+        }
+        // if (prev < 100) {
+        //   if (prev < 50) {
+        //     return prev + 1;
+        //   } else if (prev < 99.9) {
+        //     return prev + prev / prev;
+        //   }
+        // }
+      });
     }, 15);
 
     return () => clearInterval(interval);
