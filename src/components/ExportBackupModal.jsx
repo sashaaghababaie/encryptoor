@@ -120,8 +120,11 @@ export default function ExportBackupModal({ onClose, isOpen }) {
     <Modal isOpen={isOpen}>
       <motion.div animate={success ? { height: 200 } : {}}>
         <div className="flex justify-between">
-          <h1 className="font-bold text-lg text-white">Export Data</h1>
-          <button onClick={handleClose}>
+          <h1 className="font-bold text-lg text-white">Export Vault</h1>
+          <button
+            className="hover:text-white/50 duration-200"
+            onClick={handleClose}
+          >
             <LuX />
           </button>
         </div>

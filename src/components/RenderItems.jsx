@@ -69,10 +69,9 @@ const NoteView = ({
   return (
     <motion.li
       key={item.id}
-      initial={{ x: 0, width: "0%", opacity: 0, marginTop: 10 }}
+      initial={!isRemoving && { width: "0%", opacity: 0, marginTop: 10 }}
       variants={{
         start: {
-          x: 0,
           width: "100%",
           opacity: 1,
           marginTop: 10,
@@ -290,7 +289,7 @@ const LoginView = ({
       <div
         style={{ width: `${holdProgress}%` }}
         className={`absolute h-full top-0 left-0 bg-rose-500/20 rounded-[30px] ${
-          startDelete === false && "transition-all duration-200"
+          startDelete === false && "transition-all duration-500"
         }`}
       ></div>
       <motion.div
