@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Vault from "../components/Vault";
 import Start from "../components/Start";
 import { useAppContext } from "../context/Context";
