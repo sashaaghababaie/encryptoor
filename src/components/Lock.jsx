@@ -7,6 +7,7 @@ export const Lock = ({ setState, state }) => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [buttonAnim, setButtonAnim] = useState({ animate: {}, transition: {} });
+
   const { setData, setPassKey } = useAppContext();
 
   const handleOpenVault = async () => {
@@ -27,13 +28,13 @@ export const Lock = ({ setState, state }) => {
       }
     } catch (err) {
       setError(err.message);
+
       setButtonAnim({
         animate: { x: [null, -12, 10, -8, 6, 0] },
         transition: { duration: 0.25, times: [0, 0.2, 0.4, 0.6, 0.8, 1] },
       });
-      setTimeout(() => {
-        setButtonAnim({});
-      }, 200);
+
+      setTimeout(() => setButtonAnim({}), 250);
     }
   };
 

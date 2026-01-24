@@ -12,6 +12,7 @@ const path = require("path");
 
 // const VAULT_PATH = path.join(app.getPath("userData"), "vault.enc");
 const VAULT_PATH = path.join(app.getPath("desktop"), "vault.enc");
+
 const SALT_SIZE = 16; // bytes
 const IV_SIZE = 12; // bytes for GCM
 const AUTH_TAG_SIZE = 16; // bytes
@@ -42,7 +43,7 @@ async function init() {
  * @param {*} vaultData
  * @returns
  */
-async function encryptVault(masterPassword, vaultData) {
+async function _encryptVault(masterPassword, vaultData, path) {
   try {
     const salt = randomBytes(SALT_SIZE);
     const key = deriveKey(masterPassword, salt);
@@ -66,12 +67,27 @@ async function encryptVault(masterPassword, vaultData) {
 
     // Final file content: salt + hmac + encryptedPayload
     const finalBuffer = Buffer.concat([salt, hmac, encryptedPayload]);
-    await fs.promises.writeFile(VAULT_PATH, finalBuffer);
+    await fs.promises.writeFile(path, finalBuffer);
     return { success: true };
   } catch (err) {
     return { success: false, error: err.message };
   }
   // console.log("🔐 Vault saved with encryption + HMAC.");
+}
+
+async function encryptVault(masterPassword, vaultData) {
+  return await _encryptVault(masterPassword, vaultData, VAULT_PATH);
+}
+
+async function exportVault(masterPassword, vaultData) {
+  const now = new Date();
+
+  const DESKTOP_PATH = path.join(
+    app.getPath("desktop"),
+    `vault_backup_at_${now.toDateString()}_${now.getHours()}-${now.getMinutes()}-${now.getSeconds()}.enc`
+  );
+
+  return await _encryptVault(masterPassword, vaultData, DESKTOP_PATH);
 }
 
 /**
@@ -83,6 +99,7 @@ async function decryptVault(masterPassword) {
   if (!fs.existsSync(VAULT_PATH)) {
     return { success: true, data: [] };
   }
+
   try {
     const data = await fs.promises.readFile(VAULT_PATH);
 
@@ -120,4 +137,4 @@ async function decryptVault(masterPassword) {
   }
 }
 
-module.exports = { init, decryptVault, encryptVault };
+module.exports = { init, decryptVault, encryptVault, exportVault };

@@ -22,13 +22,27 @@ export const Panel = ({
   return (
     <motion.div
       className={`px-2 py-2 mt-2 absolute w-full left-0 top-16 z-20 backdrop-blur-md text-white border border-lime-100/10 bg-lime-500/10 rounded-3xl`}
-      initial={{ y: 400, opacity: 0.5 }}
-      transition={{ delay: !showFirstTime ? 0.3 : 0 }}
       animate={panelState}
+      // initial={{ y: 400, opacity: 0.5 }}
+      // variants={{
+      //   active: { y: 0, opacity: 1 },
+      //   topover: { y: 30, opacity: 1 },
+      //   inactive: { y: 400, opacity: 1 },
+      // }}
+      // transition={{
+      //   delay: !showFirstTime ? 0.3 : 0,
+      // }}
+      initial={{ transform: "translateY(400px)", opacity: 0.5 }}
+      transition={{
+        delay: !showFirstTime ? 0.3 : 0,
+        type: "spring",
+        stiffness: 500,
+        damping: 28,
+      }}
       variants={{
-        active: { y: 0, opacity: 1 },
-        topover: { y: 30, opacity: 1 },
-        inactive: { y: 400, opacity: 1 },
+        active: { transform: "translateY(0px)", opacity: 1 },
+        topover: { transform: "translateY(30px)", opacity: 1 },
+        inactive: { transform: "translateY(400px)", opacity: 1 },
       }}
       onClick={() => {
         if (editor.show) {
@@ -134,9 +148,8 @@ export const Panel = ({
                                   data.filter((d) => d.id !== item.id)
                                 );
 
-                                const res = await window.api.decryptVault(
-                                  passKey
-                                );
+                                const res =
+                                  await window.api.decryptVault(passKey);
 
                                 if (res.success) {
                                   setData(res.data);

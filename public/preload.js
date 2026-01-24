@@ -21,4 +21,6 @@ contextBridge.exposeInMainWorld("api", {
     await ipcRenderer.invoke("vault:encrypt", passkey, data),
   decryptVault: async (passkey) =>
     await ipcRenderer.invoke("vault:decrypt", passkey),
+  exportVault: async (passkey, data) =>
+    await ipcRenderer.invoke("vault:export", passkey, data),
 });

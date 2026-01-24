@@ -20,7 +20,7 @@ export const LoginForm = ({ onClose, initData }) => {
   const { setData, data, passKey } = useAppContext();
 
   const handleInput = (e) => {
-    error[e.target.name] = "";
+    setError({ title: "" });
     setLoginData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
@@ -33,7 +33,7 @@ export const LoginForm = ({ onClose, initData }) => {
         transition: { duration: 0.25, times: [0, 0.2, 0.4, 0.6, 0.8, 1] },
       });
 
-      setTimeout(() => setButtonAnim({}), 200);
+      setTimeout(() => setButtonAnim({}), 250);
 
       return;
     }
@@ -162,7 +162,7 @@ export const NoteForm = ({ onClose, initData }) => {
   const { setData, data, passKey } = useAppContext();
 
   const handleInput = (e) => {
-    error[e.target.name] = "";
+    setError({ title: "" });
     setNoteData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
@@ -175,7 +175,7 @@ export const NoteForm = ({ onClose, initData }) => {
         transition: { duration: 0.25, times: [0, 0.2, 0.4, 0.6, 0.8, 1] },
       });
 
-      setTimeout(() => setButtonAnim({}), 200);
+      setTimeout(() => setButtonAnim({}), 250);
 
       return;
     }

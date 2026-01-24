@@ -71,7 +71,7 @@ export const PasswordInput = ({
         error
           ? "outline outline-rose-500 bg-rose-700/20"
           : "outline-none bg-zinc-700/20"
-      } w-full h-12 px-4 rounded-full shadow-inner-lg  font-bold flex gap-2 items-center duration-200`}
+      } w-full h-12 px-4 rounded-full font-bold flex gap-2 items-center duration-200`}
     >
       {
         <label className={`text-zinc-400 shrink-0 ${shouldAlign && "w-24"}`}>
