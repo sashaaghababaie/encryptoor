@@ -49,15 +49,17 @@ const NoteView = ({
     interval = setInterval(() => {
       setHoldProgress((prev) => {
         if (prev < 100) {
-          return prev + 1;
+          if (prev < 75) {
+            return prev + 1;
+          } else if (prev < 99.7) {
+            let val = prev;
+            let d = 100 - val;
+            val += d * 0.07;
+            return val;
+          } else {
+            return 100;
+          }
         }
-        // if (prev < 100) {
-        //   if (prev < 50) {
-        //     return prev + 1;
-        //   } else if (prev < 99.9) {
-        //     return prev + prev / prev;
-        //   }
-        // }
       });
     }, 15);
 
@@ -94,7 +96,7 @@ const NoteView = ({
       <div
         style={{ width: `${holdProgress}%` }}
         className={`absolute h-full top-0 left-0 bg-rose-500/20 rounded-[30px] ${
-          startDelete === false && "transition-all duration-200"
+          startDelete === false && "transition-all duration-500"
         }`}
       ></div>
       <motion.div
@@ -237,7 +239,20 @@ const LoginView = ({
     }
 
     interval = setInterval(() => {
-      setHoldProgress((prev) => prev < 100 && prev + 1);
+      setHoldProgress((prev) => {
+        if (prev < 100) {
+          if (prev < 75) {
+            return prev + 1;
+          } else if (prev < 99.7) {
+            let val = prev;
+            let d = 100 - val;
+            val += d * 0.07;
+            return val;
+          } else {
+            return 100;
+          }
+        }
+      });
     }, 15);
 
     return () => clearInterval(interval);
