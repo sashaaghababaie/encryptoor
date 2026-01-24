@@ -8,12 +8,19 @@ export const Lock = ({ setState, state }) => {
   const [error, setError] = useState("");
   const [buttonAnim, setButtonAnim] = useState({ animate: {}, transition: {} });
 
-  const { setData, setPassKey } = useAppContext();
+  const { setData, setPassKey, setInitialized } = useAppContext();
 
   const handleOpenVault = async () => {
     try {
       if (password.length === 0) {
-        throw new Error("Please type password");
+        throw new Error("Please type the password");
+      }
+
+      const isInit = await window.api.init();
+
+      if (!isInit) {
+        setInitialized(false);
+        return;
       }
 
       const res = await window.api.decryptVault(password);
@@ -23,7 +30,6 @@ export const Lock = ({ setState, state }) => {
         setData(res.data);
         setTimeout(() => setState("open"), 1);
       } else {
-        console.log(res.error);
         throw new Error(res.error);
       }
     } catch (err) {

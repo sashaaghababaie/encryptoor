@@ -5,6 +5,7 @@ const Context = createContext();
 export const ContextProvider = ({ children }) => {
   const [passKey, setPassKey] = useState("");
   const [data, setData] = useState([]);
+  const [initialized, setInitialized] = useState(false);
 
   const timerRef = useRef(null);
 
@@ -20,7 +21,16 @@ export const ContextProvider = ({ children }) => {
   }, [passKey, data]);
 
   return (
-    <Context.Provider value={{ passKey, setPassKey, data, setData }}>
+    <Context.Provider
+      value={{
+        passKey,
+        setPassKey,
+        data,
+        setData,
+        initialized,
+        setInitialized,
+      }}
+    >
       {children}
     </Context.Provider>
   );
