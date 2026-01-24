@@ -5,6 +5,9 @@ import { CreateVault } from "./CreateVault";
 const lib =
   "abcdefghijklmnopqrstuvwxyz_1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567980";
 
+/**
+ *
+ */
 const cryptoMock = () => {
   let cryptoMock = "";
   const len = Math.floor(Math.random() * 58) + 5;
@@ -14,6 +17,9 @@ const cryptoMock = () => {
   return cryptoMock;
 };
 
+/**
+ *
+ */
 const createEffectParams = () => {
   const width = window ? window.innerWidth + 500 : 1000;
   const crypto = cryptoMock();
@@ -29,14 +35,20 @@ const createEffectParams = () => {
   };
 };
 
+/**
+ *
+ */
 const CryptoEffect = () => {
   const [data, setData] = useState(() => createEffectParams());
   const [crypto, setCrypto] = useState("");
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setData(() => createEffectParams());
-    }, data.duration * 1000 + data.delay * 1000);
+    const timer = setTimeout(
+      () => {
+        setData(() => createEffectParams());
+      },
+      data.duration * 1000 + data.delay * 1000
+    );
 
     const time = Math.random() * 250 + 50;
     let counter = 0;
@@ -80,7 +92,6 @@ const CryptoEffect = () => {
 
 /**
  *
- * @returns
  */
 const Doors = () => {
   return (
@@ -98,8 +109,6 @@ const Doors = () => {
 
 /**
  *
- * @param {*} param0
- * @returns
  */
 const Door = ({ delay, duration }) => {
   return (
@@ -134,8 +143,6 @@ const Door = ({ delay, duration }) => {
 
 /**
  *
- * @param {*} param0
- * @returns
  */
 export default function Start({ setInitialized }) {
   const [height, setHeight] = useState();

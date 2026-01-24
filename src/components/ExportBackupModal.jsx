@@ -9,12 +9,14 @@ export default function ExportBackupModal({ onClose, isOpen }) {
   const [currentPass, setCurrentPass] = useState("");
   const [newPass, setNewPass] = useState("");
   const [repeatPass, setRepeatPass] = useState("");
-  const [buttonAnim, setButtonAnim] = useState({ animate: {}, transition: {} });
+
   const [state, setState] = useState("current");
+  const [buttonAnim, setButtonAnim] = useState({ animate: {}, transition: {} });
+
   const [errors, setErrors] = useState({ current: "", new: "", repeat: "" });
+  const [errorMsg, setErrorMsg] = useState("");
   const [success, setSuccess] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
 
   const { passKey, data } = useAppContext();
 

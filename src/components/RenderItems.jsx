@@ -9,15 +9,20 @@ import {
   LuFilePlus,
   LuCircleUserRound,
 } from "react-icons/lu";
-
 import { Copiable } from "./ui/Copiable";
 
+/**
+ *
+ */
 export const ItemView = (item) => {
   if (item.type === "login") return <LoginView key={item.id} {...item} />;
   if (item.type === "note") return <NoteView key={item.id} {...item} />;
   return null;
 };
 
+/**
+ *
+ */
 const NoteView = ({
   removingId,
   setRemovingId,
@@ -42,7 +47,7 @@ const NoteView = ({
 
     if (startDelete === false) {
       setHoldProgress(0);
-      interval && clearInterval(interval);
+      clearInterval(interval);
       return;
     }
 
@@ -52,10 +57,8 @@ const NoteView = ({
           if (prev < 75) {
             return prev + 1;
           } else if (prev < 99.7) {
-            let val = prev;
-            let d = 100 - val;
-            val += d * 0.07;
-            return val;
+            const d = 100 - prev;
+            return prev + d * 0.07;
           } else {
             return 100;
           }
@@ -136,8 +139,8 @@ const NoteView = ({
               onPointerDown={() => setStartDelete(true)}
               onPointerUp={() => setStartDelete(false)}
               className="w-[52px] h-[52px]
-            rounded-full bg-white/10 hover:bg-rose-500/50 text-white/30
-            text-lg flex items-center justify-center hover:text-white/70 overflow-hidden"
+                        rounded-full bg-white/10 hover:bg-rose-500/50 text-white/30
+                        text-lg flex items-center justify-center hover:text-white/70 overflow-hidden"
             >
               {hoverTrash ? (
                 <span className="select-none block text-xs font-bold w-[126px] shrink-0">
@@ -203,8 +206,6 @@ const NoteView = ({
 
 /**
  *
- * @param {*} item
- * @returns
  */
 const LoginView = ({
   removingId,
@@ -233,7 +234,7 @@ const LoginView = ({
 
     if (startDelete === false) {
       setHoldProgress(0);
-      interval && clearInterval(interval);
+      clearInterval(interval);
       return;
     }
 
@@ -243,10 +244,8 @@ const LoginView = ({
           if (prev < 75) {
             return prev + 1;
           } else if (prev < 99.7) {
-            let val = prev;
-            let d = 100 - val;
-            val += d * 0.07;
-            return val;
+            const d = 100 - prev;
+            return prev + d * 0.07;
           } else {
             return 100;
           }
@@ -330,8 +329,8 @@ const LoginView = ({
               onPointerDown={() => setStartDelete(true)}
               onPointerUp={() => setStartDelete(false)}
               className="w-[52px] h-[52px]
-            rounded-full bg-white/10 hover:bg-rose-500/50 text-white/30
-            text-lg flex items-center justify-center hover:text-white/70 overflow-hidden"
+                        rounded-full bg-white/10 hover:bg-rose-500/50 text-white/30
+                        text-lg flex items-center justify-center hover:text-white/70 overflow-hidden"
             >
               {hoverTrash ? (
                 <span className="select-none block text-xs font-bold w-[126px] shrink-0">
@@ -356,8 +355,8 @@ const LoginView = ({
                 });
               }}
               className="w-[52px] h-[52px]
-            rounded-full bg-white/10 hover:bg-blue-500/50 text-white/30
-            text-lg flex items-center justify-center hover:text-white/70 overflow-hidden"
+                        rounded-full bg-white/10 hover:bg-blue-500/50 text-white/30
+                        text-lg flex items-center justify-center hover:text-white/70 overflow-hidden"
             >
               {hoverEdit ? (
                 <span className="select-none block text-xs font-bold w-[126px] shrink-0">

@@ -6,6 +6,9 @@ import Fuse from "fuse.js";
 import Modal from "./ui/Modal";
 import { LuX } from "react-icons/lu";
 
+/**
+ *
+ */
 export const Panel = ({
   setEditorState,
   setPanelState,
@@ -70,11 +73,10 @@ export const Panel = ({
           className="h-full w-full absolute left-0 top-10 cursor-pointer"
         ></div>
       )}
-
       <div className="pb-2 flex gap-2 items-center">
         <motion.input
           placeholder="Search..."
-          className="h-8 w-full rounded-full bg-zinc-500/10 text-white/70 px-2"
+          className="h-8 w-full border border-zinc-500/10 outline-none rounded-full bg-zinc-500/10 text-white/70 px-2"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -84,18 +86,17 @@ export const Panel = ({
               filter.length === 2
                 ? "bg-zinc-500/30"
                 : "hover:bg-zinc-500/20 bg-zinc-500/10"
-            } rounded-l-3xl border-y border-white/10 border-l box-border h-full px-2`}
+            } rounded-l-full border-y duration-200 border-white/10 border-l h-full px-2`}
             onClick={() => setFilter(["note", "login"])}
           >
             All
           </button>
-
           <button
             className={`${
               filter.length === 1 && filter.includes("login")
                 ? "bg-zinc-500/30"
                 : "hover:bg-zinc-500/20 bg-zinc-500/10"
-            } border h-full px-2 box-border border-white/10`}
+            } border h-full px-2 duration-200 border-white/10`}
             onClick={() => setFilter(["login"])}
           >
             Logins
@@ -105,7 +106,7 @@ export const Panel = ({
               filter.length === 1 && filter.includes("note")
                 ? "bg-zinc-500/30"
                 : "hover:bg-zinc-500/20 bg-zinc-500/10"
-            } rounded-r-3xl box-border border-y border-r h-full px-2 border-white/10`}
+            } rounded-r-full duration-200 border-y border-r h-full px-2 border-white/10`}
             onClick={() => setFilter(["note"])}
           >
             Notes
@@ -190,6 +191,9 @@ export const Panel = ({
   );
 };
 
+/**
+ *
+ */
 const ItemViewContainer = ({ search, filter, children }) => {
   const { data } = useAppContext();
 
@@ -223,6 +227,9 @@ const ItemViewContainer = ({ search, filter, children }) => {
   );
 };
 
+/**
+ *
+ */
 const ErrorModal = ({ isOpen, onClose, errorMsg }) => {
   return (
     <Modal isOpen={isOpen}>

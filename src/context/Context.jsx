@@ -3,9 +3,9 @@ import { useContext, createContext, useState, useEffect, useRef } from "react";
 const Context = createContext();
 
 export const ContextProvider = ({ children }) => {
+  const [initialized, setInitialized] = useState(false);
   const [passKey, setPassKey] = useState("");
   const [data, setData] = useState([]);
-  const [initialized, setInitialized] = useState(false);
 
   const timerRef = useRef(null);
 

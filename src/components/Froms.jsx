@@ -6,8 +6,6 @@ import { TextInput, PasswordInput } from "./ui/Inputs";
 
 /**
  * Input Form for store a LoginInfo
- * @param {*} param0
- * @returns
  */
 export const LoginForm = ({ onClose, initData }) => {
   const [error, setError] = useState("");
@@ -164,8 +162,6 @@ export const LoginForm = ({ onClose, initData }) => {
 
 /**
  * Input Form for store a Note
- * @param {*} param0
- * @returns
  */
 export const NoteForm = ({ onClose, initData }) => {
   const [buttonAnim, setButtonAnim] = useState({ animate: {}, transition: {} });

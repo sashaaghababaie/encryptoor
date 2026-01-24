@@ -11,8 +11,6 @@ import ExportBackupModal from "./ExportBackupModal";
 
 /**
  *
- * @param {*} param0
- * @returns
  */
 const ActionButton = ({ children, ...props }) => {
   return (
@@ -30,6 +28,9 @@ const ActionButton = ({ children, ...props }) => {
   );
 };
 
+/**
+ *
+ */
 const OpenVault = ({ setLock }) => {
   const [panelState, setPanelState] = useState("active");
   const [hoverLock, setHoverLock] = useState(false);
@@ -218,6 +219,9 @@ const OpenVault = ({ setLock }) => {
   );
 };
 
+/**
+ *
+ */
 export default function Vault() {
   const [state, setState] = useState("close");
   const [offload, setOffload] = useState(false);

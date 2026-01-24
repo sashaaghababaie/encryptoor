@@ -3,6 +3,9 @@ import { useState, useEffect } from "react";
 import { PasswordInput } from "./ui/Inputs";
 import { motion } from "motion/react";
 
+/**
+ *
+ */
 export const Lock = ({ setState, state }) => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -108,7 +111,6 @@ export const Lock = ({ setState, state }) => {
 
 /**
  *
- * @returns
  */
 export const ChangePassword = ({ onClose }) => {
   const [inputs, setInputs] = useState({
