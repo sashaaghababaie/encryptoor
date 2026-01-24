@@ -1,6 +1,6 @@
 {
-  "short_name": "Guran gap",
-  "name": "Project Guran cultural heritage",
+  "short_name": "Encryptoor",
+  "name": "A local encryptor for secure text stuff.",
   "icons": [
     {
       "src": "favicon.ico",
@@ -16,5 +16,5 @@
   "start_url": ".",
   "display": "standalone",
   "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "background_color": "#000000"
 }

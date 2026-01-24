@@ -222,6 +222,8 @@ export default function Vault() {
   const [state, setState] = useState("close");
   const [offload, setOffload] = useState(false);
 
+  const { passKey } = useAppContext();
+
   useEffect(() => {
     if (state !== "open") return;
 
@@ -229,6 +231,13 @@ export default function Vault() {
 
     return () => clearTimeout(timer);
   }, [state]);
+
+  useEffect(() => {
+    if (passKey.length === 0) {
+      setOffload(false);
+      setState("close");
+    }
+  }, [passKey]);
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-black">
