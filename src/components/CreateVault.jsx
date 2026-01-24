@@ -57,7 +57,7 @@ export const CreateVault = ({ setInitialized, setShowLock }) => {
     }
   };
 
-  const enoughLen = () => inputs.password.length >= 8;
+  const enoughLen = () => inputs.password.length >= 10;
   const hasDigit = () => /\d/.test(inputs.password);
   const hasUppercase = () => /[A-Z]/.test(inputs.password);
   const hasLowercase = () => /[a-z]/.test(inputs.password);
@@ -124,7 +124,7 @@ export const CreateVault = ({ setInitialized, setShowLock }) => {
                 enoughLen() ? "text-emerald-400" : "text-rose-500"
               }`}
             >
-              -More than 8 characters
+              -More than 10 characters
             </li>
             <li
               className={`${hasDigit() ? "text-emerald-400" : "text-rose-500"}`}
