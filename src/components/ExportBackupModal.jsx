@@ -32,11 +32,13 @@ export default function ExportBackupModal({ onClose, isOpen }) {
   };
 
   const handleInputNewPass = (e) => {
+    setErrorMsg("");
     setErrors((prev) => ({ ...prev, new: "" }));
     setNewPass(e.target.value);
   };
 
   const handleInputRepeatPass = (e) => {
+    setErrorMsg("");
     setErrors((prev) => ({ ...prev, repeat: "" }));
     setRepeatPass(e.target.value);
   };

@@ -5,7 +5,7 @@ import { useAppContext } from "../context/Context";
 import { TextInput, PasswordInput } from "./ui/Inputs";
 
 /**
- * Input Form for store a LoginInfo
+ * Input Form to store a LoginInfo
  */
 export const LoginForm = ({ onClose, initData }) => {
   const [error, setError] = useState("");
@@ -27,7 +27,7 @@ export const LoginForm = ({ onClose, initData }) => {
     try {
       setError("");
 
-      if (!loginData.title) {
+      if (loginData.title.length === 0) {
         setInputError("Required");
         throw new Error("required");
       }
@@ -161,7 +161,7 @@ export const LoginForm = ({ onClose, initData }) => {
 };
 
 /**
- * Input Form for store a Note
+ * Input Form to store a Note
  */
 export const NoteForm = ({ onClose, initData }) => {
   const [buttonAnim, setButtonAnim] = useState({ animate: {}, transition: {} });

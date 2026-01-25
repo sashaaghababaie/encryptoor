@@ -152,7 +152,7 @@ export const ChangePassword = ({ onClose }) => {
 
       const enc = await window.api.encryptVault(inputs.password, dec.data);
 
-      if (enc.success) {
+      if (enc.success === true) {
         onClose();
       } else {
         throw new Error(enc.error);

@@ -161,15 +161,17 @@ export default function Start({ setInitialized }) {
     }
 
     return () => {
-      if (bgTimer) clearTimeout(bgTimer);
-      if (lockTimer) clearTimeout(lockTimer);
+      clearTimeout(bgTimer);
+      clearTimeout(lockTimer);
     };
   }, [showDoors]);
 
   useEffect(() => {
     const resize = () => setHeight(window.innerHeight);
     setFirstShow(true);
+
     resize();
+
     window.addEventListener("resize", resize);
     return () => window.removeEventListener("resize", resize);
   }, []);
