@@ -144,7 +144,7 @@ const Door = ({ delay, duration }) => {
 /**
  *
  */
-export default function Start({ setInitialized }) {
+export default function Start() {
   const [height, setHeight] = useState();
   const [firstShow, setFirstShow] = useState(false);
   const [showDoors, setShowDoors] = useState(false);
@@ -221,12 +221,7 @@ export default function Start({ setInitialized }) {
         <div className="absolute inset-0">
           {showDoors && <Doors />}
           <AnimatePresence>
-            {showLock && (
-              <CreateVault
-                setShowLock={setShowLock}
-                setInitialized={setInitialized}
-              />
-            )}
+            {showLock && <CreateVault setShowLock={setShowLock} />}
           </AnimatePresence>
         </div>
       </div>

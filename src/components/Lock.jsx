@@ -147,7 +147,7 @@ export const ChangePassword = ({ onClose }) => {
       const dec = await window.api.decryptVault(inputs.current);
 
       if (!dec.success) {
-        console.log(dec.error);
+        throw new Error(dec.error);
       }
 
       const enc = await window.api.encryptVault(inputs.password, dec.data);
@@ -159,6 +159,7 @@ export const ChangePassword = ({ onClose }) => {
       }
     } catch (err) {
       setError(err.message);
+
       setButtonAnim({
         animate: { x: [null, -12, 10, -8, 6, 0] },
         transition: { duration: 0.25, times: [0, 0.2, 0.4, 0.6, 0.8, 1] },
@@ -166,7 +167,7 @@ export const ChangePassword = ({ onClose }) => {
 
       setTimeout(() => {
         setButtonAnim({});
-      }, 200);
+      }, 250);
 
       return;
     }
@@ -235,7 +236,7 @@ export const ChangePassword = ({ onClose }) => {
               whileHover={{ scale: 1.05 }}
               onClick={handleChangePassword}
             >
-              Chane Password
+              Change Password
             </motion.button>
           </div>
         </div>

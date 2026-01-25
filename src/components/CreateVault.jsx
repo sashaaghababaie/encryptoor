@@ -1,12 +1,15 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { PasswordInput } from "./ui/Inputs";
+import { useAppContext } from "../context/Context";
 
-export const CreateVault = ({ setInitialized, setShowLock }) => {
+export const CreateVault = ({ setShowLock }) => {
   const [inputs, setInputs] = useState({ password: "", repeat: "" });
   const [error, setError] = useState("");
   const [buttonAnim, setButtonAnim] = useState({ animate: {}, transition: {} });
   const [secureHint, setSecureHint] = useState(false);
+
+  const { setInitialized } = useAppContext();
 
   const handleInput = (e) => {
     setInputs((prev) => ({ ...prev, [e.target.name]: e.target.value }));

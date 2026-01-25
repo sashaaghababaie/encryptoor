@@ -17,5 +17,5 @@ export default function Main() {
     return <Vault />;
   }
 
-  return <Start setInitialized={setInitialized} />;
+  return <Start />;
 }
