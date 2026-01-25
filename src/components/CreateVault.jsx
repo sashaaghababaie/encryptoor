@@ -39,7 +39,7 @@ export const CreateVault = ({ setInitialized, setShowLock }) => {
         },
       ]);
 
-      if (res.success) {
+      if (res.success === true) {
         setTimeout(() => setInitialized(true), 300);
         setTimeout(() => setShowLock(false), 1);
       } else {
