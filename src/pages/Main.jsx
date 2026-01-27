@@ -1,17 +1,24 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Vault from "../components/Vault";
 import Start from "../components/Start";
 import { useAppContext } from "../context/Context";
 
 export default function Main() {
+  const [loading, setLoading] = useState(true);
+
   const { initialized, setInitialized } = useAppContext();
 
   useEffect(() => {
     (async () => {
       const isInit = await window.api.init();
       setInitialized(isInit);
+      setLoading(false);
     })();
   }, []);
+
+  if (loading) {
+    return <div className="h-screen w-screen bg-black" />;
+  }
 
   if (initialized) {
     return <Vault />;

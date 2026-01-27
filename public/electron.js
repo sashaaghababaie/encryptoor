@@ -1,41 +1,51 @@
 // ./public/electron.js
 const path = require("path");
-const { ipcMain, app, BrowserWindow } = require("electron");
+const { app, BrowserWindow } = require("electron");
 const isDev = require("electron-is-dev");
-const {
-  encryptVault,
-  decryptVault,
-  init,
-  exportVault,
-} = require("../src/api/vault");
+const vaultEvents = require("../src/api/events");
+const { handleIpcs } = require("../public/ipc");
 
 function createWindow() {
-  // Create the browser window.
   const win = new BrowserWindow({
+    // frame: false,
+    // titleBarStyle: "hidden",
+    // titleBarOverlay: {
+    //   color: "#2f3241",
+    //   symbolColor: "#74b1be",
+    //   height: 30,
+    // },
+    title: "Encryptoor",
     width: 920,
     height: 600,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: true,
       preload: path.join(__dirname, "preload.js"),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+      enableRemoteModule: false,
     },
   });
 
-  // and load the index.html of the app.
-  // win.loadFile("index.html");
   win.loadURL(
     isDev
       ? "http://localhost:3000"
       : `file://${path.join(__dirname, "../build/index.html")}`
   );
 
-  // Open the DevTools.
   if (isDev) {
     win.webContents.openDevTools({ mode: "detach" });
   }
+
+  vaultEvents.on("vault:locked", ({ reason }) => {
+    if (!win || win.isDestroyed()) return;
+
+    win.webContents.send("vault:locked", reason);
+  });
+
+  // win.setTitle("Encryptoor");
 }
 
-// const dbPath = isDev ? "desktop" : "userData";
+// app.setName("Encryptoor");
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
@@ -58,44 +68,4 @@ app.on("activate", () => {
   }
 });
 
-// ipcMain handlers
-ipcMain.handle("vault:encrypt", async (_event, passkey, data) => {
-  return await encryptVault(passkey, data);
-});
-
-ipcMain.handle("vault:decrypt", async (_event, passkey) => {
-  return await decryptVault(passkey);
-});
-
-ipcMain.handle("vault:init", async (_event) => {
-  return await init();
-});
-
-ipcMain.handle("vault:export", async (_event, passkey, data) => {
-  return await exportVault(passkey, data);
-});
-
-//examples
-// ipcMain.handle("init", async (event) => {
-//   return await init(app.getPath(dbPath));
-// });
-
-// ipcMain.handle("openChangeDiractory", async (e) => {
-//   let response = await dialog.showOpenDialog({ properties: ["openDirectory"] });
-//   if (response.canceled) return { success: false };
-//   const _path = response.filePaths[0];
-//   return await someapi(app.getPath(dbPath), _path);
-// });
-
-// ipcMain.handle("openDialoge", async (e, arg1, arg2) => {
-//   let response = dialog.showMessageBoxSync(BrowserWindow.getFocusedWindow(), {
-//     type: "question",
-//     buttons: ["No", "Yes"],
-//     title: "Confirm",
-//     message: `${arg1}`,
-//   });
-//   if (response == 1) {
-//     e.preventDefault();
-//     return await someapi(app.getPath(dbPath), arg2);
-//   }
-// });
+handleIpcs();

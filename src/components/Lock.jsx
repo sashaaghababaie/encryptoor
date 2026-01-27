@@ -11,7 +11,7 @@ export const Lock = ({ setState, state }) => {
   const [error, setError] = useState("");
   const [buttonAnim, setButtonAnim] = useState({ animate: {}, transition: {} });
 
-  const { setData, setPassKey, setInitialized } = useAppContext();
+  const { setData, setInitialized, setSession } = useAppContext();
 
   const handleOpenVault = async () => {
     try {
@@ -26,17 +26,22 @@ export const Lock = ({ setState, state }) => {
         return;
       }
 
-      const res = await window.api.decryptVault(password);
+      const res = await window.api.unlock(password);
 
       if (res.success) {
-        setPassKey(password);
+        setSession(res.sessionId);
         setData(res.data);
         setTimeout(() => setState("open"), 1);
+        setPassword("");
       } else {
         throw new Error(res.error);
       }
     } catch (err) {
-      setError(err.message);
+      if (err.message === "Unsupported state or unable to authenticate data") {
+        setError("Wrong Password.");
+      } else {
+        setError(err.message);
+      }
 
       setButtonAnim({
         animate: { x: [null, -12, 10, -8, 6, 0] },
@@ -115,8 +120,8 @@ export const Lock = ({ setState, state }) => {
 export const ChangePassword = ({ onClose }) => {
   const [inputs, setInputs] = useState({
     current: "",
-    password: "",
-    repeat: "",
+    newPass: "",
+    repeatNewPass: "",
   });
   const [error, setError] = useState("");
   const [buttonAnim, setButtonAnim] = useState({ animate: {}, transition: {} });
@@ -127,7 +132,10 @@ export const ChangePassword = ({ onClose }) => {
   };
 
   useEffect(() => {
-    if (inputs.repeat.length > 0 && inputs.password !== inputs.repeat) {
+    if (
+      inputs.repeatNewPass.length > 0 &&
+      inputs.newPass !== inputs.repeatNewPass
+    ) {
       setError("Passwords aren't match");
     } else {
       setError("");
@@ -136,26 +144,24 @@ export const ChangePassword = ({ onClose }) => {
 
   const handleChangePassword = async () => {
     try {
-      if (inputs.password.length === 0) {
+      if (inputs.newPass.length === 0) {
         throw new Error("Please type a password");
       }
 
-      if (inputs.password !== inputs.repeat) {
+      if (inputs.newPass !== inputs.repeatNewPass) {
         throw new Error("Passwords aren't match");
       }
 
-      const dec = await window.api.decryptVault(inputs.current);
+      const res = await window.api.changePassword(
+        inputs.current,
+        inputs.newPass
+      );
 
-      if (!dec.success) {
-        throw new Error(dec.error);
-      }
-
-      const enc = await window.api.encryptVault(inputs.password, dec.data);
-
-      if (enc.success === true) {
+      if (res.success === true) {
+        setInputs({ current: "", newPass: "", repeatNewPass: "" });
         onClose();
       } else {
-        throw new Error(enc.error);
+        throw new Error(res.error);
       }
     } catch (err) {
       setError(err.message);
@@ -205,16 +211,16 @@ export const ChangePassword = ({ onClose }) => {
         <div className="flex flex-col gap-1">
           <label className="text-sm">New Password:</label>
           <PasswordInput
-            name="password"
-            value={inputs.password}
+            name="newPass"
+            value={inputs.newPass}
             onChange={handleInput}
           />
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-sm">Repeat New Password:</label>
           <PasswordInput
-            name="repeat"
-            value={inputs.repeat}
+            name="repeatNewPass"
+            value={inputs.repeatNewPass}
             onChange={handleInput}
           />
         </div>

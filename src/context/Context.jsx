@@ -4,27 +4,37 @@ const Context = createContext();
 
 export const ContextProvider = ({ children }) => {
   const [initialized, setInitialized] = useState(false);
-  const [passKey, setPassKey] = useState("");
   const [data, setData] = useState([]);
+  const [session, setSession] = useState(null);
 
-  const timerRef = useRef(null);
+  // const timerRef = useRef(null);
+
+  // useEffect(() => {
+  //   if (session) {
+  //     timerRef.current = setTimeout(() => {
+  //       window.api.lock();
+  //       setSession(null);
+  //       setData([]);
+  //     }, 60000);
+  //   }
+
+  //   return () => clearTimeout(timerRef.current);
+  // }, [session, data]);
 
   useEffect(() => {
-    if (passKey.length) {
-      timerRef.current = setTimeout(() => {
-        setPassKey("");
-        setData([]);
-      }, 60000);
-    }
-
-    return () => clearTimeout(timerRef.current);
-  }, [passKey, data]);
+    window.api.onLocked((reason) => {
+      console.log("message recieved");
+      setSession(null);
+      setData([]);
+      console.log("Vault locked:", reason);
+    });
+  }, []);
 
   return (
     <Context.Provider
       value={{
-        passKey,
-        setPassKey,
+        session,
+        setSession,
         data,
         setData,
         initialized,

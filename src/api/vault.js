@@ -1,142 +1,378 @@
-const {
-  createCipheriv,
-  createDecipheriv,
-  createHmac,
-  pbkdf2Sync,
-  randomBytes,
-  // scryptSync,
-} = require("crypto");
+const crypto = require("crypto");
 const fs = require("fs");
-const { app } = require("electron");
 const path = require("path");
+const { app } = require("electron");
+const { ERRORS } = require("../lib");
+const isDev = require("electron-is-dev");
+const vaultEvents = require("../api/events");
 
-// const VAULT_PATH = path.join(app.getPath("userData"), "vault.enc");
-const VAULT_PATH = path.join(app.getPath("desktop"), "vault.enc");
+const DB_PATH = isDev ? "desktop" : "userData";
+const VAULT_DIR = path.join(app.getPath(DB_PATH), "encryptoor");
+const VAULT_PATH = path.join(VAULT_DIR, "vault.json");
 
-const SALT_SIZE = 16; // bytes
-const IV_SIZE = 12; // bytes for GCM
-const AUTH_TAG_SIZE = 16; // bytes
-const HMAC_SIZE = 32; // bytes (SHA-256 output)
-const PBKDF2_ROUNDS = 100_000;
+const MAGIC = "ENCRYPTOOR";
+const VERSION = 1;
 
-function deriveKey(password, salt) {
-  return pbkdf2Sync(password, salt, PBKDF2_ROUNDS, 32, "sha256");
-  // return scryptSync(password, salt, 32, { N: 2 ** 15, r: 8, p: 1 });
-}
+const SCRYPT_PARAMS = {
+  N: 2 ** 15,
+  r: 8,
+  p: 1,
+  maxmem: 64 * 1024 * 1024,
+};
 
-function computeHMAC(hmacKey, data) {
-  return createHmac("sha256", hmacKey).update(data).digest();
+let session = null; // in-memory only
+
+/**
+ * Read and return the vault
+ */
+function readVault() {
+  const vault = JSON.parse(fs.readFileSync(VAULT_PATH, "utf8"));
+
+  if (vault.magic !== MAGIC) {
+    throw new Error(ERRORS.INVALID_VAULT);
+  }
+
+  return vault;
 }
 
 /**
- *
- * @returns
+ * Check if any vault exists
  */
-async function init() {
-  if (fs.existsSync(VAULT_PATH)) return true;
-  return false;
-}
-
-/**
- *
- * @param {*} masterPassword
- * @param {*} vaultData
- * @returns
- */
-async function _encryptVault(masterPassword, vaultData, path) {
+function init() {
   try {
-    const salt = randomBytes(SALT_SIZE);
-    const key = deriveKey(masterPassword, salt);
-    const hmacKey = deriveKey(masterPassword + "_hmac", salt); // derive different key for HMAC
+    readVault();
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
 
-    const iv = randomBytes(IV_SIZE);
-    const cipher = createCipheriv("aes-256-gcm", key, iv);
+function scryptKey(password, salt) {
+  return crypto.scryptSync(password, salt, 32, SCRYPT_PARAMS);
+}
 
-    const json = JSON.stringify(vaultData);
-    const encrypted = Buffer.concat([
-      cipher.update(json, "utf8"),
-      cipher.final(),
-    ]);
-    const authTag = cipher.getAuthTag();
+function aesEncrypt(key, plaintext) {
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+  const encrypted = Buffer.concat([cipher.update(plaintext), cipher.final()]);
 
-    // Prepare encrypted content (iv + authTag + encrypted)
-    const encryptedPayload = Buffer.concat([iv, authTag, encrypted]);
+  return {
+    encrypted,
+    iv,
+    tag: cipher.getAuthTag(),
+  };
+}
 
-    // Compute HMAC over the encrypted payload
-    const hmac = computeHMAC(hmacKey, encryptedPayload);
+function aesDecrypt(key, iv, tag, ciphertext) {
+  const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
+  decipher.setAuthTag(tag);
 
-    // Final file content: salt + hmac + encryptedPayload
-    const finalBuffer = Buffer.concat([salt, hmac, encryptedPayload]);
+  return Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+}
 
-    await fs.promises.writeFile(path, finalBuffer);
+function createVault(masterPassword, data = []) {
+  try {
+    const salt = crypto.randomBytes(16);
+    const kek = scryptKey(masterPassword, salt);
+
+    const vaultKey = crypto.randomBytes(32);
+
+    const wrapped = aesEncrypt(kek, vaultKey);
+    const encryptedData = aesEncrypt(
+      vaultKey,
+      Buffer.from(JSON.stringify(data))
+    );
+
+    const vault = {
+      magic: MAGIC,
+      version: VERSION,
+      header: {
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        kdf: {
+          name: "scrypt",
+          params: SCRYPT_PARAMS,
+          salt: salt.toString("base64"),
+        },
+        crypto: { cipher: "aes-256-gcm" },
+      },
+      protected: {
+        encryptedVaultKey: wrapped.encrypted.toString("base64"),
+        vaultKeyIv: wrapped.iv.toString("base64"),
+        vaultKeyTag: wrapped.tag.toString("base64"),
+      },
+      data: {
+        encrypted: encryptedData.encrypted.toString("base64"),
+        iv: encryptedData.iv.toString("base64"),
+        authTag: encryptedData.tag.toString("base64"),
+      },
+    };
+
+    fs.mkdirSync(VAULT_DIR, { recursive: true, mode: 0o700 });
+
+    atomicWrite(VAULT_PATH, JSON.stringify(vault, null, 2));
 
     return { success: true };
   } catch (err) {
     return { success: false, error: err.message };
   }
-  // console.log("🔐 Vault saved with encryption + HMAC.");
 }
 
-async function encryptVault(masterPassword, vaultData) {
-  return await _encryptVault(masterPassword, vaultData, VAULT_PATH);
-}
-
-async function exportVault(masterPassword, vaultData) {
-  const now = new Date();
-
-  const DESKTOP_PATH = path.join(
-    app.getPath("desktop"),
-    `vault_backup_at_${now.toDateString()}_${now.getHours()}-${now.getMinutes()}-${now.getSeconds()}.enc`
-  );
-
-  return await _encryptVault(masterPassword, vaultData, DESKTOP_PATH);
-}
-
-/**
- *
- * @param {*} masterPassword
- * @returns
- */
-async function decryptVault(masterPassword) {
-  if (!fs.existsSync(VAULT_PATH)) {
-    return { success: true, data: [] };
-  }
-
+function unlockVault(masterPassword) {
   try {
-    const data = await fs.promises.readFile(VAULT_PATH);
+    const vault = readVault();
 
-    const salt = data.subarray(0, SALT_SIZE);
-    const hmac = data.subarray(SALT_SIZE, SALT_SIZE + HMAC_SIZE);
-    const encryptedPayload = data.subarray(SALT_SIZE + HMAC_SIZE);
+    const salt = Buffer.from(vault.header.kdf.salt, "base64");
+    const kek = scryptKey(masterPassword, salt);
 
-    const iv = encryptedPayload.subarray(0, IV_SIZE);
-    const authTag = encryptedPayload.subarray(IV_SIZE, IV_SIZE + AUTH_TAG_SIZE);
-    const encrypted = encryptedPayload.subarray(IV_SIZE + AUTH_TAG_SIZE);
+    const vaultKey = aesDecrypt(
+      kek,
+      Buffer.from(vault.protected.vaultKeyIv, "base64"),
+      Buffer.from(vault.protected.vaultKeyTag, "base64"),
+      Buffer.from(vault.protected.encryptedVaultKey, "base64")
+    );
 
-    const key = deriveKey(masterPassword, salt);
-    const hmacKey = deriveKey(masterPassword + "_hmac", salt);
+    const data = JSON.parse(
+      aesDecrypt(
+        vaultKey,
+        Buffer.from(vault.data.iv, "base64"),
+        Buffer.from(vault.data.authTag, "base64"),
+        Buffer.from(vault.data.encrypted, "base64")
+      ).toString("utf8")
+    );
 
-    const expectedHmac = computeHMAC(hmacKey, encryptedPayload);
+    createSession(vaultKey, data);
 
-    // Constant-time comparison
-    if (!expectedHmac.equals(hmac)) {
-      throw new Error(
-        "❌ Vault integrity check failed. Wrong password or tampered file."
-      );
-    }
-
-    const decipher = createDecipheriv("aes-256-gcm", key, iv);
-    decipher.setAuthTag(authTag);
-
-    const decrypted = Buffer.concat([
-      decipher.update(encrypted),
-      decipher.final(),
-    ]);
-
-    return { success: true, data: JSON.parse(decrypted.toString("utf8")) };
+    return { success: true, sessionId: session.id, data };
   } catch (err) {
     return { success: false, error: err.message };
   }
 }
 
-module.exports = { init, decryptVault, encryptVault, exportVault };
+function requireSession(sessionId) {
+  if (!session || session.id !== sessionId) {
+    throw new Error(ERRORS.UNAUTHORIZED);
+  }
+
+  clearTimeout(session.timer);
+
+  session.timer = setTimeout(() => destroySession(sessionId), session.timeout);
+}
+
+/**
+ * Safely clear the session, zeroing the memory and lock the UI.
+ */
+function destroySession() {
+  if (!session) return;
+
+  clearTimeout(session.timer);
+  lockVault();
+
+  vaultEvents.emit("vault:locked", { reason: "timeout" });
+}
+
+function updateVault(sessionId, newData) {
+  try {
+    requireSession(sessionId);
+
+    session.data = newData;
+
+    const encrypted = aesEncrypt(
+      session.vaultKey,
+      Buffer.from(JSON.stringify(newData))
+    );
+
+    const vault = readVault();
+
+    vault.data = {
+      encrypted: encrypted.encrypted.toString("base64"),
+      iv: encrypted.iv.toString("base64"),
+      authTag: encrypted.tag.toString("base64"),
+    };
+
+    vault.header.updatedAt = new Date().toISOString();
+
+    writeVault(VAULT_PATH, JSON.stringify(vault, null, 2));
+
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+function changePassword(oldPass, newPass) {
+  try {
+    const vault = readVault();
+
+    const oldSalt = Buffer.from(vault.header.kdf.salt, "base64");
+    const oldKek = scryptKey(oldPass, oldSalt);
+
+    // verify old password by decrypting vault key
+    const vaultKey = aesDecrypt(
+      oldKek,
+      Buffer.from(vault.protected.vaultKeyIv, "base64"),
+      Buffer.from(vault.protected.vaultKeyTag, "base64"),
+      Buffer.from(vault.protected.encryptedVaultKey, "base64")
+    );
+
+    const newSalt = crypto.randomBytes(16);
+    const newKek = scryptKey(newPass, newSalt);
+    const wrapped = aesEncrypt(newKek, vaultKey);
+
+    vault.header.kdf.salt = newSalt.toString("base64");
+    vault.protected = {
+      encryptedVaultKey: wrapped.encrypted.toString("base64"),
+      vaultKeyIv: wrapped.iv.toString("base64"),
+      vaultKeyTag: wrapped.tag.toString("base64"),
+    };
+
+    writeVault(VAULT_PATH, JSON.stringify(vault, null, 2));
+
+    return { success: true };
+  } catch (err) {
+    return { success: false, erro: err.message };
+  }
+}
+
+function lockVault() {
+  if (session) {
+    session.vaultKey.fill(0);
+    session = null;
+  }
+}
+
+/**
+ * Atomically write data to a file.
+ * @param {path} filePath
+ * @param {{[index:string]: string}} data
+ */
+function atomicWrite(filePath, data) {
+  const dir = path.dirname(filePath);
+  const tempPath = path.join(dir, `.tmp-${Date.now()}`);
+  try {
+    fs.writeFileSync(tempPath, data, { mode: 0o600 });
+    fs.fsyncSync(fs.openSync(tempPath, "r"));
+    fs.renameSync(tempPath, filePath);
+  } catch (err) {
+    if (err.code === "ENOSPC") {
+      throw new Error(ERRORS.DISK_FULL);
+    }
+    if (err.code === "EACCES") {
+      throw new Error(ERRORS.PERMISSION_DENIED);
+    }
+    throw err;
+  }
+}
+
+function rotateBackups(file, max = 3) {
+  for (let i = max - 1; i >= 1; i--) {
+    const src = `${file}.bak${i}`;
+    const dest = `${file}.bak${i + 1}`;
+
+    if (fs.existsSync(src)) {
+      fs.renameSync(src, dest);
+    }
+  }
+}
+
+function createBackup(file) {
+  if (fs.existsSync(file)) {
+    fs.copyFileSync(file, `${file}.bak1`);
+  }
+}
+
+function writeVault(file, data) {
+  rotateBackups(file);
+  createBackup(file);
+  atomicWrite(file, data);
+}
+function rotateBackups(file, max = 3) {
+  for (let i = max - 1; i >= 1; i--) {
+    const src = `${file}.bak${i}`;
+    const dest = `${file}.bak${i + 1}`;
+
+    if (fs.existsSync(src)) {
+      fs.renameSync(src, dest);
+    }
+  }
+}
+
+function createBackup(file) {
+  if (fs.existsSync(file)) {
+    fs.copyFileSync(file, `${file}.bak1`);
+  }
+}
+
+function writeVault(file, data) {
+  rotateBackups(file);
+  createBackup(file);
+  atomicWrite(file, data);
+}
+// function writeDisk(filePath, data) {
+//   try {
+//     fs.writeFileSync(filePath, data);
+//   } catch (err) {
+//     if (err.code === "ENOSPC") {
+//       throw new Error(ERRORS.DISK_FULL);
+//     }
+//     if (err.code === "EACCES") {
+//       throw new Error(ERRORS.PERMISSION_DENIED);
+//     }
+//     throw err;
+//   }
+// }
+
+function createSession(vaultKey, data) {
+  const sessionId = crypto.randomUUID();
+
+  session = {
+    id: sessionId,
+    vaultKey,
+    data,
+    lastActivity: Date.now(),
+    timeout: 60_000,
+    timer: null,
+  };
+
+  session.timer = setTimeout(() => {
+    destroySession(sessionId);
+  }, session.timeout);
+}
+
+module.exports = {
+  requireSession,
+  init,
+  lockVault,
+  changePassword,
+  createVault,
+  unlockVault,
+  updateVault,
+};
+
+// function restoreBackup(file) {
+//   const vault = loadVault(file);
+
+//   // must succeed
+//   const vaultKey = unwrapVaultKey(
+//     password,
+//     vault.protected.encryptedVaultKey
+//   );
+
+//   if (!vaultKey) {
+//     throw new Error("Incorrect password for this backup");
+//   }
+
+//   // restore EXACT vault
+//   atomicWrite(VAULT_PATH, JSON.stringify(vault));
+// }
+
+// function restoreBackup(index = 1) {
+//   const backup = `${VAULT_PATH}.bak${index}`;
+//   if (!fs.existsSync(backup)) {
+//     throw new Error("Backup not found");
+//   }
+
+//   const data = fs.readFileSync(backup);
+//   verifyVaultIntegrity(data); // HMAC / version check
+//   atomicWrite(VAULT_PATH, data);
+// }

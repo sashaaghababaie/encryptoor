@@ -33,7 +33,7 @@ export const CreateVault = ({ setShowLock }) => {
         throw new Error("Passwords aren't match");
       }
 
-      const res = await window.api.encryptVault(inputs.password, [
+      const res = await window.api.create(inputs.password, [
         {
           id: "0",
           title: "Welcome",
@@ -45,6 +45,7 @@ export const CreateVault = ({ setShowLock }) => {
       if (res.success === true) {
         setTimeout(() => setInitialized(true), 300);
         setTimeout(() => setShowLock(false), 1);
+        setInputs({ password: "", repeat: "" });
       } else {
         throw new Error(res.error);
       }

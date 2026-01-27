@@ -43,26 +43,14 @@ const OpenVault = ({ setLock }) => {
     initData: null,
   });
 
-  const { data, setData, passKey, setPassKey } = useAppContext();
+  const { setData, setSession } = useAppContext();
 
   const handleLock = async () => {
-    const res = await window.api.encryptVault(passKey, data);
-
-    if (res.success) {
-      setPassKey("");
-      setData([]);
-      setLock();
-    }
+    await window.api.lock();
+    setSession("");
+    setData([]);
+    setLock();
   };
-
-  // const handleBakcup = async () => {
-  //   // const res = await window.api.encryptVault(passKey, data);
-  //   // if (res.success) {
-  //   //   setPassKey("");
-  //   //   setData([]);
-  //   //   setLock();
-  //   // }
-  // };
 
   return (
     <Layout>
@@ -226,7 +214,7 @@ export default function Vault() {
   const [state, setState] = useState("close");
   const [offload, setOffload] = useState(false);
 
-  const { passKey } = useAppContext();
+  const { session } = useAppContext();
 
   useEffect(() => {
     if (state !== "open") return;
@@ -237,11 +225,11 @@ export default function Vault() {
   }, [state]);
 
   useEffect(() => {
-    if (passKey.length === 0) {
+    if (!session) {
       setOffload(false);
       setState("close");
     }
-  }, [passKey]);
+  }, [session]);
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-black">

@@ -2,6 +2,19 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const { ipcRenderer, contextBridge } = require("electron");
 
+contextBridge.exposeInMainWorld("api", {
+  init: () => ipcRenderer.invoke("vault:init"),
+  getSession: (sessionId) => ipcRenderer.invoke("vault:session", sessionId),
+  create: (pass, data) => ipcRenderer.invoke("vault:create", pass, data),
+  unlock: (pass) => ipcRenderer.invoke("vault:unlock", pass),
+  lock: () => ipcRenderer.invoke("vault:lock"),
+  onLocked: (cb) => ipcRenderer.on("vault:locked", (_, reason) => cb(reason)),
+  update: (sessionId, data) =>
+    ipcRenderer.invoke("vault:update", sessionId, data),
+  changePassword: (oldPass, newPass) =>
+    ipcRenderer.invoke("vault:changePassword", oldPass, newPass),
+});
+
 // contextBridge.exposeInMainWorld("api", {
 // examples
 // init: async (e) => {
@@ -15,12 +28,12 @@ const { ipcRenderer, contextBridge } = require("electron");
 // },
 // });
 
-contextBridge.exposeInMainWorld("api", {
-  init: async () => await ipcRenderer.invoke("vault:init"),
-  encryptVault: async (passkey, data) =>
-    await ipcRenderer.invoke("vault:encrypt", passkey, data),
-  decryptVault: async (passkey) =>
-    await ipcRenderer.invoke("vault:decrypt", passkey),
-  exportVault: async (passkey, data) =>
-    await ipcRenderer.invoke("vault:export", passkey, data),
-});
+// contextBridge.exposeInMainWorld("api", {
+//   init: async () => await ipcRenderer.invoke("vault:init"),
+//   encryptVault: async (passkey, data) =>
+//     await ipcRenderer.invoke("vault:encrypt", passkey, data),
+//   decryptVault: async (passkey) =>
+//     await ipcRenderer.invoke("vault:decrypt", passkey),
+//   exportVault: async (passkey, data) =>
+//     await ipcRenderer.invoke("vault:export", passkey, data),
+// });

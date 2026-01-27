@@ -21,7 +21,7 @@ export const Panel = ({
   const [filter, setFilter] = useState(["login", "note"]);
   const [error, setError] = useState("");
 
-  const { data, setData, passKey } = useAppContext();
+  const { data, setData, session } = useAppContext();
 
   useEffect(() => setShowFirstTime(true), []);
 
@@ -141,6 +141,8 @@ export const Panel = ({
                           setRemovingId={setRemovingId}
                           isRemoving={removingId === item.id}
                           onRemoveComplete={() => {
+                            const copy = [...data];
+
                             setData((prev) =>
                               prev.filter((d) => d.id !== item.id)
                             );
@@ -148,13 +150,18 @@ export const Panel = ({
                             setRemovingId("");
 
                             (async () => {
-                              const encRes = await window.api.encryptVault(
-                                passKey,
+                              const res = await window.api.update(
+                                session,
                                 data.filter((d) => d.id !== item.id)
                               );
 
-                              if (encRes.success === false) {
-                                if (encRes.error.match("ENOSPC")) {
+                              if (res.success === true) {
+                                setData((prev) =>
+                                  prev.filter((d) => d.id !== item.id)
+                                );
+                              } else {
+                                setData(copy);
+                                if (res.error.match("ENOSPC")) {
                                   setError(
                                     "There is no space left on the device to complete this action."
                                   );
@@ -163,16 +170,6 @@ export const Panel = ({
                                     "Unexpected Error :(, Cannot delete right now."
                                   );
                                 }
-                              }
-
-                              const decRes =
-                                await window.api.decryptVault(passKey);
-
-                              if (decRes.success === true) {
-                                setData(decRes.data);
-                              } else {
-                                setData(data);
-                                setError(decRes.error);
                               }
                             })();
                           }}

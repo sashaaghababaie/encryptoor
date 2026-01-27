@@ -15,7 +15,7 @@ export const LoginForm = ({ onClose, initData }) => {
     initData || { username: "", password: "", website: "", title: "" }
   );
 
-  const { setData, data, passKey } = useAppContext();
+  const { setData, data, session } = useAppContext();
 
   const handleInput = (e) => {
     setInputError("");
@@ -47,19 +47,13 @@ export const LoginForm = ({ onClose, initData }) => {
         newData.push(loginInfo);
       }
 
-      const encRes = await window.api.encryptVault(passKey, newData);
+      const res = await window.api.update(session, newData);
 
-      if (encRes.success === false) {
-        throw new Error(encRes.error);
-      }
-
-      const decRes = await window.api.decryptVault(passKey);
-
-      if (decRes.success === true) {
-        setData(decRes.data);
+      if (res.success === true) {
+        setData(newData);
         onClose();
       } else {
-        throw new Error(decRes.error);
+        throw new Error(res.error);
       }
     } catch (err) {
       if (err.message === "required") {
@@ -169,7 +163,7 @@ export const NoteForm = ({ onClose, initData }) => {
   const [inputError, setInputError] = useState("");
   const [error, setError] = useState("");
 
-  const { setData, data, passKey } = useAppContext();
+  const { setData, data, session } = useAppContext();
 
   const handleInput = (e) => {
     setError("");
@@ -201,19 +195,13 @@ export const NoteForm = ({ onClose, initData }) => {
         newData.push(noteInfo);
       }
 
-      const encRes = await window.api.encryptVault(passKey, newData);
+      const res = await window.api.update(session, newData);
 
-      if (encRes.success === false) {
-        throw new Error(encRes.error);
-      }
-
-      const decRes = await window.api.decryptVault(passKey);
-
-      if (decRes.success === true) {
-        setData(decRes.data);
+      if (res.success === true) {
+        setData(newData);
         onClose();
       } else {
-        throw new Error(decRes.error);
+        throw new Error(res.error);
       }
     } catch (err) {
       if (err.message === "required") {
