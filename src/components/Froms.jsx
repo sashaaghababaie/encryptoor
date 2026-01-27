@@ -32,12 +32,18 @@ export const LoginForm = ({ onClose, initData }) => {
         throw new Error("required");
       }
 
+      const id = initData.id || nanoid();
+      const createdAt = initData.createdAt || Date.now();
+      const updatedAt = Date.now();
+
       const loginInfo = {
-        id: initData ? initData.id : nanoid(),
+        id,
         type: "login",
         ...loginData,
+        createdAt,
+        updatedAt,
       };
-
+      ``;
       const newData = structuredClone(data);
 
       if (initData) {
@@ -180,10 +186,16 @@ export const NoteForm = ({ onClose, initData }) => {
         throw new Error("required");
       }
 
+      const id = initData.id || nanoid();
+      const createdAt = initData.createdAt || Date.now();
+      const updatedAt = Date.now();
+
       const noteInfo = {
-        id: initData ? initData.id : nanoid(),
+        id,
         type: "note",
         ...noteData,
+        createdAt,
+        updatedAt,
       };
 
       const newData = structuredClone(data);

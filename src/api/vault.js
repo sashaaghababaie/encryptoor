@@ -47,10 +47,21 @@ function init() {
   }
 }
 
+/**
+ *
+ * @param {*} password
+ * @param {*} salt
+ */
 function scryptKey(password, salt) {
   return crypto.scryptSync(password, salt, 32, SCRYPT_PARAMS);
 }
 
+/**
+ *
+ * @param {*} key
+ * @param {*} plaintext
+ * @returns
+ */
 function aesEncrypt(key, plaintext) {
   const iv = crypto.randomBytes(12);
   const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
@@ -63,6 +74,14 @@ function aesEncrypt(key, plaintext) {
   };
 }
 
+/**
+ *
+ * @param {*} key
+ * @param {*} iv
+ * @param {*} tag
+ * @param {*} ciphertext
+ * @returns
+ */
 function aesDecrypt(key, iv, tag, ciphertext) {
   const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
   decipher.setAuthTag(tag);
@@ -70,6 +89,12 @@ function aesDecrypt(key, iv, tag, ciphertext) {
   return Buffer.concat([decipher.update(ciphertext), decipher.final()]);
 }
 
+/**
+ *
+ * @param {*} masterPassword
+ * @param {*} data
+ * @returns
+ */
 function createVault(masterPassword, data = []) {
   try {
     const salt = crypto.randomBytes(16);
@@ -87,8 +112,8 @@ function createVault(masterPassword, data = []) {
       magic: MAGIC,
       version: VERSION,
       header: {
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
         kdf: {
           name: "scrypt",
           params: SCRYPT_PARAMS,
@@ -118,6 +143,11 @@ function createVault(masterPassword, data = []) {
   }
 }
 
+/**
+ *
+ * @param {*} masterPassword
+ * @returns
+ */
 function unlockVault(masterPassword) {
   try {
     const vault = readVault();
@@ -149,6 +179,10 @@ function unlockVault(masterPassword) {
   }
 }
 
+/**
+ *
+ * @param {*} sessionId
+ */
 function requireSession(sessionId) {
   if (!session || session.id !== sessionId) {
     throw new Error(ERRORS.UNAUTHORIZED);
@@ -171,6 +205,12 @@ function destroySession() {
   vaultEvents.emit("vault:locked", { reason: "timeout" });
 }
 
+/**
+ *
+ * @param {*} sessionId
+ * @param {*} newData
+ * @returns
+ */
 function updateVault(sessionId, newData) {
   try {
     requireSession(sessionId);
@@ -190,7 +230,7 @@ function updateVault(sessionId, newData) {
       authTag: encrypted.tag.toString("base64"),
     };
 
-    vault.header.updatedAt = new Date().toISOString();
+    vault.header.updatedAt = Date.now();
 
     writeVault(VAULT_PATH, JSON.stringify(vault, null, 2));
 
@@ -200,6 +240,12 @@ function updateVault(sessionId, newData) {
   }
 }
 
+/**
+ *
+ * @param {*} oldPass
+ * @param {*} newPass
+ * @returns
+ */
 function changePassword(oldPass, newPass) {
   try {
     const vault = readVault();
@@ -234,6 +280,9 @@ function changePassword(oldPass, newPass) {
   }
 }
 
+/**
+ *
+ */
 function lockVault() {
   if (session) {
     session.vaultKey.fill(0);
@@ -264,6 +313,11 @@ function atomicWrite(filePath, data) {
   }
 }
 
+/**
+ *
+ * @param {*} file
+ * @param {*} max
+ */
 function rotateBackups(file, max = 3) {
   for (let i = max - 1; i >= 1; i--) {
     const src = `${file}.bak${i}`;
@@ -275,17 +329,32 @@ function rotateBackups(file, max = 3) {
   }
 }
 
+/**
+ *
+ * @param {*} file
+ */
 function createBackup(file) {
   if (fs.existsSync(file)) {
     fs.copyFileSync(file, `${file}.bak1`);
   }
 }
 
+/**
+ *
+ * @param {*} file
+ * @param {*} data
+ */
 function writeVault(file, data) {
   rotateBackups(file);
   createBackup(file);
   atomicWrite(file, data);
 }
+
+/**
+ *
+ * @param {*} file
+ * @param {*} max
+ */
 function rotateBackups(file, max = 3) {
   for (let i = max - 1; i >= 1; i--) {
     const src = `${file}.bak${i}`;
@@ -297,31 +366,32 @@ function rotateBackups(file, max = 3) {
   }
 }
 
+/**
+ *
+ * @param {*} file
+ */
 function createBackup(file) {
   if (fs.existsSync(file)) {
     fs.copyFileSync(file, `${file}.bak1`);
   }
 }
 
+/**
+ *
+ * @param {*} file
+ * @param {*} data
+ */
 function writeVault(file, data) {
   rotateBackups(file);
   createBackup(file);
   atomicWrite(file, data);
 }
-// function writeDisk(filePath, data) {
-//   try {
-//     fs.writeFileSync(filePath, data);
-//   } catch (err) {
-//     if (err.code === "ENOSPC") {
-//       throw new Error(ERRORS.DISK_FULL);
-//     }
-//     if (err.code === "EACCES") {
-//       throw new Error(ERRORS.PERMISSION_DENIED);
-//     }
-//     throw err;
-//   }
-// }
 
+/**
+ *
+ * @param {*} vaultKey
+ * @param {*} data
+ */
 function createSession(vaultKey, data) {
   const sessionId = crypto.randomUUID();
 
