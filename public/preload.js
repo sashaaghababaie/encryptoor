@@ -9,8 +9,8 @@ contextBridge.exposeInMainWorld("api", {
   unlock: (pass) => ipcRenderer.invoke("vault:unlock", pass),
   lock: () => ipcRenderer.invoke("vault:lock"),
   onLocked: (cb) => ipcRenderer.on("vault:locked", (_, reason) => cb(reason)),
-  update: (sessionId, data) =>
-    ipcRenderer.invoke("vault:update", sessionId, data),
+  upsert: (sessionId, item) =>
+    ipcRenderer.invoke("vault:upsert", sessionId, item),
   changePassword: (oldPass, newPass) =>
     ipcRenderer.invoke("vault:changePassword", oldPass, newPass),
 });

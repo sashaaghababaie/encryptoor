@@ -2,7 +2,7 @@ const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const { app } = require("electron");
-const { ERRORS } = require("../lib");
+const { ERRORS, sanitizeEntry } = require("../lib");
 const isDev = require("electron-is-dev");
 const vaultEvents = require("../api/events");
 
@@ -25,26 +25,46 @@ let session = null; // in-memory only
 /**
  * Read and return the vault
  */
-function readVault() {
-  const vault = JSON.parse(fs.readFileSync(VAULT_PATH, "utf8"));
+// function readVault() {
+//   const vault = JSON.parse(fs.readFileSync(VAULT_PATH, "utf8"));
 
-  if (vault.magic !== MAGIC) {
-    throw new Error(ERRORS.INVALID_VAULT);
+//   if (vault.magic !== MAGIC) {
+//     throw new Error(ERRORS.INVALID_VAULT);
+//   }
+
+//   return vault;
+// }
+
+function readVault() {
+  if (!fs.existsSync(VAULT_DIR)) {
+    throw new Error(ERRORS.NOT_INITIALIZED);
   }
 
-  return vault;
-}
+  try {
+    const vault = JSON.parse(fs.readFileSync(VAULT_PATH, "utf8"));
 
+    if (vault.magic !== MAGIC) {
+      throw new Error(ERRORS.INVALID_VAULT);
+    }
+
+    return vault;
+  } catch (err) {
+    for (let i = 1; i <= 3; i++) {
+      const backupPath = `${VAULT_PATH}.bak${i}`;
+
+      if (fs.existsSync(backupPath)) {
+        throw new Error(ERRORS.NO_FILE_BUT_BACKUP_FOUND);
+      }
+    }
+
+    throw err;
+  }
+}
 /**
  * Check if any vault exists
  */
 function init() {
-  try {
-    readVault();
-    return true;
-  } catch (_) {
-    return false;
-  }
+  readVault();
 }
 
 /**
@@ -211,9 +231,25 @@ function destroySession() {
  * @param {*} newData
  * @returns
  */
-function updateVault(sessionId, newData) {
+function upsertVault(sessionId, newItem) {
   try {
     requireSession(sessionId);
+
+    const cleanData = sanitizeEntry(newItem);
+
+    if (!cleanData) {
+      throw new Error(ERRORS.INVALIT_ENTRY);
+    }
+
+    const newData = structuredClone(session.data);
+
+    const found = newData.find((d) => d.id === newItem.id);
+
+    if (found) {
+      Object.assign(found, cleanData);
+    } else {
+      newData.push(cleanData);
+    }
 
     session.data = newData;
 
@@ -234,7 +270,7 @@ function updateVault(sessionId, newData) {
 
     writeVault(VAULT_PATH, JSON.stringify(vault, null, 2));
 
-    return { success: true };
+    return { success: true, data: session.data };
   } catch (err) {
     return { success: false, error: err.message };
   }
@@ -416,7 +452,7 @@ module.exports = {
   changePassword,
   createVault,
   unlockVault,
-  updateVault,
+  upsertVault,
 };
 
 // function restoreBackup(file) {

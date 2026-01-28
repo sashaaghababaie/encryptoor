@@ -121,8 +121,8 @@ export const Panel = ({
       >
         <motion.ul>
           <ItemViewContainer search={search} filter={filter}>
-            {(results) =>
-              results.map((r, i) => (
+            {(results) => {
+              return results.map((r, i) => (
                 <div key={i}>
                   {r.data.length > 0 && (
                     <div key={`data-${i}`} className="pb-4">
@@ -179,8 +179,8 @@ export const Panel = ({
                     </div>
                   )}
                 </div>
-              ))
-            }
+              ));
+            }}
           </ItemViewContainer>
         </motion.ul>
       </div>

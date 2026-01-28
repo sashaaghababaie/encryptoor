@@ -3,7 +3,7 @@ const {
   init,
   createVault,
   unlockVault,
-  updateVault,
+  upsertVault,
   requireSession,
   lockVault,
   changePassword,
@@ -23,8 +23,8 @@ function handleIpcs() {
     return unlockVault(pass);
   });
 
-  ipcMain.handle("vault:update", (_, sessionId, data) => {
-    return updateVault(sessionId, data);
+  ipcMain.handle("vault:upsert", (_, sessionId, data) => {
+    return upsertVault(sessionId, data);
   });
 
   ipcMain.handle("vault:session", (_, sessionId) => {

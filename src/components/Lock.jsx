@@ -2,6 +2,7 @@ import { useAppContext } from "../context/Context";
 import { useState, useEffect } from "react";
 import { PasswordInput } from "./ui/Inputs";
 import { motion } from "motion/react";
+import { ERRORS } from "../lib";
 
 /**
  *
@@ -19,19 +20,12 @@ export const Lock = ({ setState, state }) => {
         throw new Error("Please type the password");
       }
 
-      const isInit = await window.api.init();
-
-      if (!isInit) {
-        setInitialized(false);
-        return;
-      }
-
       const res = await window.api.unlock(password);
 
       if (res.success) {
         setSession(res.sessionId);
         setData(res.data);
-        setTimeout(() => setState("open"), 1);
+        setState("open");
         setPassword("");
       } else {
         throw new Error(res.error);
@@ -39,6 +33,11 @@ export const Lock = ({ setState, state }) => {
     } catch (err) {
       if (err.message === "Unsupported state or unable to authenticate data") {
         setError("Wrong Password.");
+      } else if (
+        err.message === ERRORS.NOT_INITIALIZED ||
+        err.message === ERRORS.INVALID_VAULT
+      ) {
+        setInitialized(false);
       } else {
         setError(err.message);
       }

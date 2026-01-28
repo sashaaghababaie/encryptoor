@@ -72,16 +72,6 @@ const NoteView = ({
     return () => clearInterval(interval);
   }, [startDelete]);
 
-  const handleOpenItem = async () => {
-    try {
-      await window.api.getSession(session);
-      setTimeout(() => setOpen(!isOpen), 1);
-    } catch (err) {
-      await window.api.lock();
-      setSession(null);
-    }
-  };
-
   return (
     <motion.li
       key={item.id}
@@ -128,9 +118,7 @@ const NoteView = ({
       >
         <div className="flex shrink-0 w-full min-w-[340px] group">
           <h1
-            // onClick={() => setTimeout(() => setOpen(!isOpen), 1)}
             onClick={() => setOpen(!isOpen)}
-            // onClick={() => setTimeout(() => setOpen(!isOpen), 10)}
             className={`gap-2 select-none cursor-pointer h-[60px] pr-4 pl-1 w-full flex items-center border-b transition-all duration-200 font-bold text-sm ${
               isOpen ? "border-b-white/50" : "border-b-transparent"
             }`}

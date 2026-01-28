@@ -32,8 +32,8 @@ export const LoginForm = ({ onClose, initData }) => {
         throw new Error("required");
       }
 
-      const id = initData.id || nanoid();
-      const createdAt = initData.createdAt || Date.now();
+      const id = initData ? initData.id : nanoid();
+      const createdAt = initData ? initData.createdAt : Date.now();
       const updatedAt = Date.now();
 
       const loginInfo = {
@@ -43,20 +43,21 @@ export const LoginForm = ({ onClose, initData }) => {
         createdAt,
         updatedAt,
       };
-      ``;
-      const newData = structuredClone(data);
 
-      if (initData) {
-        let edited = newData.find((d) => d.id === loginInfo.id);
-        Object.assign(edited, loginInfo);
-      } else {
-        newData.push(loginInfo);
-      }
+      // const newData = structuredClone(data);
 
-      const res = await window.api.update(session, newData);
+      // if (initData) {
+      //   let edited = newData.find((d) => d.id === loginInfo.id);
+      //   Object.assign(edited, loginInfo);
+      // } else {
+      //   newData.push(loginInfo);
+      // }
+
+      const res = await window.api.upsert(session, loginInfo);
 
       if (res.success === true) {
-        setData(newData);
+        console.log(res.data);
+        setData(res.data);
         onClose();
       } else {
         throw new Error(res.error);
@@ -186,8 +187,8 @@ export const NoteForm = ({ onClose, initData }) => {
         throw new Error("required");
       }
 
-      const id = initData.id || nanoid();
-      const createdAt = initData.createdAt || Date.now();
+      const id = initData ? initData.id : nanoid();
+      const createdAt = initData ? initData.createdAt : Date.now();
       const updatedAt = Date.now();
 
       const noteInfo = {
@@ -198,19 +199,19 @@ export const NoteForm = ({ onClose, initData }) => {
         updatedAt,
       };
 
-      const newData = structuredClone(data);
+      // const newData = structuredClone(data);
 
-      if (initData) {
-        let edited = newData.find((d) => d.id === noteInfo.id);
-        Object.assign(edited, noteInfo);
-      } else {
-        newData.push(noteInfo);
-      }
+      // if (initData) {
+      //   let edited = newData.find((d) => d.id === noteInfo.id);
+      //   Object.assign(edited, noteInfo);
+      // } else {
+      //   newData.push(noteInfo);
+      // }
 
-      const res = await window.api.update(session, newData);
+      const res = await window.api.upsert(session, noteInfo);
 
       if (res.success === true) {
-        setData(newData);
+        setData(res.data);
         onClose();
       } else {
         throw new Error(res.error);
