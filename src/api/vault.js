@@ -227,11 +227,47 @@ function destroySession() {
 
 /**
  *
- * @param {*} sessionId
+ * @param {string} sessionId
+ * @param {string} itemId
+ * @returns
+ */
+function removeItem(sessionId, itemId) {
+  try {
+    requireSession(sessionId);
+
+    const currentData = structuredClone(session.data);
+
+    session.data = currentData.filter((item) => item.id !== itemId);
+
+    const encrypted = aesEncrypt(
+      session.vaultKey,
+      Buffer.from(JSON.stringify(currentData))
+    );
+
+    const vault = readVault();
+
+    vault.data = {
+      encrypted: encrypted.encrypted.toString("base64"),
+      iv: encrypted.iv.toString("base64"),
+      authTag: encrypted.tag.toString("base64"),
+    };
+
+    vault.header.updatedAt = Date.now();
+
+    writeVault(VAULT_PATH, JSON.stringify(vault, null, 2));
+
+    return { success: true, data: session.data };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+/**
+ *
+ * @param {string} sessionId
  * @param {*} newData
  * @returns
  */
-function upsertVault(sessionId, newItem) {
+function upsertItem(sessionId, newItem) {
   try {
     requireSession(sessionId);
 
@@ -334,6 +370,7 @@ function lockVault() {
 function atomicWrite(filePath, data) {
   const dir = path.dirname(filePath);
   const tempPath = path.join(dir, `.tmp-${Date.now()}`);
+
   try {
     fs.writeFileSync(tempPath, data, { mode: 0o600 });
     fs.fsyncSync(fs.openSync(tempPath, "r"));
@@ -342,9 +379,11 @@ function atomicWrite(filePath, data) {
     if (err.code === "ENOSPC") {
       throw new Error(ERRORS.DISK_FULL);
     }
+
     if (err.code === "EACCES") {
       throw new Error(ERRORS.PERMISSION_DENIED);
     }
+
     throw err;
   }
 }
@@ -436,7 +475,7 @@ function createSession(vaultKey, data) {
     vaultKey,
     data,
     lastActivity: Date.now(),
-    timeout: 60_000,
+    timeout: 600_000,
     timer: null,
   };
 
@@ -452,7 +491,8 @@ module.exports = {
   changePassword,
   createVault,
   unlockVault,
-  upsertVault,
+  upsertItem,
+  removeItem,
 };
 
 // function restoreBackup(file) {

@@ -3,10 +3,11 @@ const {
   init,
   createVault,
   unlockVault,
-  upsertVault,
+  upsertItem,
   requireSession,
   lockVault,
   changePassword,
+  removeItem,
 } = require("../src/api/vault");
 
 // ipcMain handlers
@@ -23,8 +24,12 @@ function handleIpcs() {
     return unlockVault(pass);
   });
 
-  ipcMain.handle("vault:upsert", (_, sessionId, data) => {
-    return upsertVault(sessionId, data);
+  ipcMain.handle("vault:upsert", (_, sessionId, item) => {
+    return upsertItem(sessionId, item);
+  });
+
+  ipcMain.handle("vault:remove", (_, sessionId, itemId) => {
+    return removeItem(sessionId, itemId);
   });
 
   ipcMain.handle("vault:session", (_, sessionId) => {

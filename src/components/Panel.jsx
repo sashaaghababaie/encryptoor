@@ -141,37 +141,52 @@ export const Panel = ({
                           setRemovingId={setRemovingId}
                           isRemoving={removingId === item.id}
                           onRemoveComplete={() => {
-                            const copy = [...data];
-
-                            setData((prev) =>
-                              prev.filter((d) => d.id !== item.id)
-                            );
-
-                            setRemovingId("");
+                            // setData((prev) =>
+                            //   prev.filter((d) => d.id !== item.id)
+                            // );
+                            // const copy = [...data];
 
                             (async () => {
-                              const res = await window.api.update(
+                              const res = await window.api.remove(
                                 session,
-                                data.filter((d) => d.id !== item.id)
+                                item.id
                               );
 
                               if (res.success === true) {
-                                setData((prev) =>
-                                  prev.filter((d) => d.id !== item.id)
-                                );
+                                setData(res.data);
                               } else {
-                                setData(copy);
-                                if (res.error.match("ENOSPC")) {
-                                  setError(
-                                    "There is no space left on the device to complete this action."
-                                  );
-                                } else {
-                                  setError(
-                                    "Unexpected Error :(, Cannot delete right now."
-                                  );
-                                }
+                                // setData(copy);
+                                setError(res.error);
                               }
+                              setRemovingId("");
                             })();
+                            // const copy = [...data];
+                            // setData((prev) =>
+                            //   prev.filter((d) => d.id !== item.id)
+                            // );
+                            // setRemovingId("");
+                            // (async () => {
+                            //   const res = await window.api.update(
+                            //     session,
+                            //     data.filter((d) => d.id !== item.id)
+                            //   );
+                            //   if (res.success === true) {
+                            //     setData((prev) =>
+                            //       prev.filter((d) => d.id !== item.id)
+                            //     );
+                            //   } else {
+                            //     setData(copy);
+                            //     if (res.error.match("ENOSPC")) {
+                            //       setError(
+                            //         "There is no space left on the device to complete this action."
+                            //       );
+                            //     } else {
+                            //       setError(
+                            //         "Unexpected Error :(, Cannot delete right now."
+                            //       );
+                            //     }
+                            //   }
+                            // })();
                           }}
                           {...item}
                         />

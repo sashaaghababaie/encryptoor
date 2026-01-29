@@ -46,6 +46,10 @@ const NoteView = ({
   }, [holdProgress, item.id]);
 
   useEffect(() => {
+    if (!hoverTrash) setStartDelete(false);
+  }, [hoverTrash]);
+
+  useEffect(() => {
     let interval;
 
     if (startDelete === false) {
@@ -82,6 +86,7 @@ const NoteView = ({
           opacity: 1,
           marginTop: 10,
           transition: { delay: item.index * 0.1 },
+          height: "auto",
         },
         delete: {
           x: "100%",
@@ -92,7 +97,10 @@ const NoteView = ({
       }}
       animate={isRemoving ? "delete" : "start"}
       onAnimationComplete={(def) => {
-        if (isRemoving && def === "delete") onRemoveComplete?.();
+        if (isRemoving && def === "delete") {
+          onRemoveComplete?.();
+          setStartDelete(false);
+        }
       }}
       className={`middle-btn-3 rounded-[30px] flex flex-col justify-center items-center relative overflow-hidden ${
         startDelete && "shadow-lg shadow-rose-500/20"
@@ -119,9 +127,7 @@ const NoteView = ({
         <div className="flex shrink-0 w-full min-w-[340px] group">
           <h1
             onClick={() => setOpen(!isOpen)}
-            className={`gap-2 select-none cursor-pointer h-[60px] pr-4 pl-1 w-full flex items-center border-b transition-all duration-200 font-bold text-sm ${
-              isOpen ? "border-b-white/50" : "border-b-transparent"
-            }`}
+            className="gap-2 select-none cursor-pointer h-[60px] pr-4 pl-1 w-full flex items-center font-bold text-sm"
           >
             <span className="bg-emerald-500/30 shrink-0 h-[52px] w-[52px] rounded-full flex items-center justify-center">
               <LuFilePlus className="w-6 h-6" />
@@ -233,6 +239,10 @@ const LoginView = ({
   }, [holdProgress, item.id]);
 
   useEffect(() => {
+    if (!hoverTrash) setStartDelete(false);
+  }, [hoverTrash]);
+
+  useEffect(() => {
     let interval;
 
     if (startDelete === false) {
@@ -262,6 +272,7 @@ const LoginView = ({
   const height =
     (Object.values(item).filter((val) => val.length > 0).length - 3) * 56 + 8;
 
+  console.log(height);
   return (
     <motion.li
       className={`middle-btn-3 rounded-[30px] flex flex-col justify-center items-center relative overflow-hidden ${
@@ -274,6 +285,7 @@ const LoginView = ({
           width: "100%",
           opacity: 1,
           marginTop: 10,
+          height: "auto",
           transition: { delay: item.index * 0.1 },
         },
         delete: {
@@ -285,7 +297,10 @@ const LoginView = ({
       }}
       animate={isRemoving ? "delete" : "start"}
       onAnimationComplete={(def) => {
-        if (isRemoving && def === "delete") onRemoveComplete?.();
+        if (isRemoving && def === "delete") {
+          onRemoveComplete?.();
+          setStartDelete(false);
+        }
       }}
     >
       <div
@@ -308,10 +323,8 @@ const LoginView = ({
       >
         <div className="flex shrink-0 w-full min-w-[340px] group">
           <h1
-            onClick={() => setTimeout(() => setOpen(!isOpen), 10)}
-            className={`gap-2 select-none cursor-pointer h-[60px] pr-4 pl-1 w-full flex items-center border-b transition-all duration-200 font-bold text-sm ${
-              isOpen ? "border-b-white/50" : "border-b-transparent"
-            }`}
+            onClick={() => setOpen(!isOpen)}
+            className="gap-2 select-none cursor-pointer h-[60px] pr-4 pl-1 w-full flex items-center  font-bold text-sm"
           >
             <span className="bg-blue-500/30 shrink-0 h-[52px] w-[52px] rounded-full flex items-center justify-center">
               <LuCircleUserRound className="w-6 h-6" />
@@ -325,10 +338,7 @@ const LoginView = ({
               onHoverEnd={() => setHoverTrash(false)}
               whileHover={{ width: 126 }}
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              onClick={() => {
-                setStartDelete(false);
-                setHoldProgress(0);
-              }}
+              onClick={() => setStartDelete(false)}
               onPointerDown={() => setStartDelete(true)}
               onPointerUp={() => setStartDelete(false)}
               className="w-[52px] h-[52px]
@@ -417,13 +427,13 @@ const LoginView = ({
                   <div className="flex items-center h-full gap-2">
                     <label className="text-white/40">Website:</label>
                     <p className="w-full">{item.website}</p>
-                    <a
+                    {/* <a
                       href={item.website}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
                       <LuExternalLink />
-                    </a>
+                    </a> */}
                   </div>
                 </Copiable>
               )}
