@@ -8,9 +8,13 @@ const {
   lockVault,
   changePassword,
   removeItem,
+  requestCopyPassword,
+  requestShowPassword,
 } = require("../src/api/vault");
 
-// ipcMain handlers
+/**
+ *
+ */
 function handleIpcs() {
   ipcMain.handle("vault:init", (_) => {
     return init();
@@ -30,6 +34,14 @@ function handleIpcs() {
 
   ipcMain.handle("vault:remove", (_, sessionId, itemId) => {
     return removeItem(sessionId, itemId);
+  });
+
+  ipcMain.handle("vault:copyPassword", (_, itemId) => {
+    return requestCopyPassword(itemId);
+  });
+
+  ipcMain.handle("vault:showPassword", (_, itemId) => {
+    return requestShowPassword(itemId);
   });
 
   ipcMain.handle("vault:session", (_, sessionId) => {

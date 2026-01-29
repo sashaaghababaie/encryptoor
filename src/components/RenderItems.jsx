@@ -9,7 +9,7 @@ import {
   LuFilePlus,
   LuCircleUserRound,
 } from "react-icons/lu";
-import { Copiable } from "./ui/Copiable";
+import { Copiable, SafeCopiable } from "./ui/Copiable";
 import { useAppContext } from "../context/Context";
 
 /**
@@ -38,8 +38,6 @@ const NoteView = ({
   const [holdProgress, setHoldProgress] = useState(0);
   const [hoverTrash, setHoverTrash] = useState(false);
   const [hoverEdit, setHoverEdit] = useState(false);
-
-  const { session, setSession } = useAppContext();
 
   useEffect(() => {
     if (holdProgress === 100) setRemovingId(item.id);
@@ -231,8 +229,19 @@ const LoginView = ({
   const [holdProgress, setHoldProgress] = useState(0);
   const [hoverTrash, setHoverTrash] = useState(false);
   const [hoverEdit, setHoverEdit] = useState(false);
+  const [realPass, setRealPass] = useState("");
 
-  useEffect(() => setShowPassword(false), [isOpen]);
+  useEffect(() => {
+    setRealPass(false);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (realPass) {
+      setShowPassword(true);
+    } else {
+      setShowPassword(false);
+    }
+  }, [realPass]);
 
   useEffect(() => {
     if (holdProgress === 100) setRemovingId(item.id);
@@ -268,6 +277,12 @@ const LoginView = ({
 
     return () => clearInterval(interval);
   }, [startDelete]);
+
+  const handleShowPassword = async () => {
+    const pass = await window.api.show(item.id);
+    setRealPass(pass);
+    setTimeout(() => setRealPass(""), 5000);
+  };
 
   const height =
     (Object.values(item).filter((val) => val.length > 0).length - 3) * 56 + 8;
@@ -398,7 +413,7 @@ const LoginView = ({
                 </Copiable>
               )}
               {item.password && (
-                <Copiable text={item.password}>
+                <SafeCopiable itemId={item.id}>
                   <div className="flex items-center h-full">
                     <div className="w-full flex gap-1">
                       <label className="text-white/40">Password:</label>
@@ -406,20 +421,25 @@ const LoginView = ({
                         type={showPassword ? "text" : "password"}
                         className="bg-transparent"
                         disabled
-                        value={item.password}
+                        value={showPassword ? realPass : item.password}
                       />
                     </div>
                     <button
                       className="text-white/70 hover:text-white transition-all duration-200 text-lg"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setShowPassword(!showPassword);
+
+                        if (!realPass) {
+                          handleShowPassword();
+                        } else {
+                          setRealPass("");
+                        }
                       }}
                     >
                       {showPassword ? <LuEyeOff /> : <LuEye />}
                     </button>
                   </div>
-                </Copiable>
+                </SafeCopiable>
               )}
               {item.website && (
                 <Copiable text={item.website}>

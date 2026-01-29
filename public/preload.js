@@ -8,6 +8,8 @@ contextBridge.exposeInMainWorld("api", {
   create: (pass, data) => ipcRenderer.invoke("vault:create", pass, data),
   unlock: (pass) => ipcRenderer.invoke("vault:unlock", pass),
   lock: () => ipcRenderer.invoke("vault:lock"),
+  copy: (itemId) => ipcRenderer.invoke("vault:copyPassword", itemId),
+  show: (itemId) => ipcRenderer.invoke("vault:showPassword", itemId),
   onLocked: (cb) => ipcRenderer.on("vault:locked", (_, reason) => cb(reason)),
   upsert: (sessionId, item) =>
     ipcRenderer.invoke("vault:upsert", sessionId, item),

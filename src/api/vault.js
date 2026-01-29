@@ -5,6 +5,7 @@ const { app } = require("electron");
 const { ERRORS, sanitizeEntry } = require("../lib");
 const isDev = require("electron-is-dev");
 const vaultEvents = require("../api/events");
+const { clipboard } = require("electron");
 
 const DB_PATH = isDev ? "desktop" : "userData";
 const VAULT_DIR = path.join(app.getPath(DB_PATH), "encryptoor");
@@ -21,7 +22,7 @@ const SCRYPT_PARAMS = {
 };
 
 let session = null; // in-memory only
-
+let clipboardTimer = null;
 /**
  * Read and return the vault
  */
@@ -193,7 +194,7 @@ function unlockVault(masterPassword) {
 
     createSession(vaultKey, data);
 
-    return { success: true, sessionId: session.id, data };
+    return { success: true, sessionId: session.id, data: secureData(data) };
   } catch (err) {
     return { success: false, error: err.message };
   }
@@ -256,7 +257,7 @@ function removeItem(sessionId, itemId) {
 
     writeVault(VAULT_PATH, JSON.stringify(vault, null, 2));
 
-    return { success: true, data: session.data };
+    return { success: true, data: secureData(session.data) };
   } catch (err) {
     return { success: false, error: err.message };
   }
@@ -306,7 +307,7 @@ function upsertItem(sessionId, newItem) {
 
     writeVault(VAULT_PATH, JSON.stringify(vault, null, 2));
 
-    return { success: true, data: session.data };
+    return { success: true, data: secureData(session.data) };
   } catch (err) {
     return { success: false, error: err.message };
   }
@@ -484,7 +485,68 @@ function createSession(vaultKey, data) {
   }, session.timeout);
 }
 
+/**
+ *
+ */
+function requestCopyPassword(itemId) {
+  const item = session.data.find((item) => item.id === itemId);
+
+  if (!item.password) {
+    return;
+  } else {
+    const wipedPassword = "••••••••••";
+
+    clipboard.writeText(wipedPassword);
+
+    setTimeout(() => clipboard.writeText(item.password), 200);
+
+    if (clipboardTimer) clearTimeout(clipboardTimer);
+
+    clipboardTimer = setTimeout(() => {
+      clipboard.clear();
+      clipboardTimer = null;
+    }, 30_000);
+  }
+}
+
+/**
+ *
+ */
+function secureData(data) {
+  const secureData = data.map((item) => {
+    if (!item.password) {
+      return item;
+    } else {
+      const wipedPassword = "•".repeat(item.password.length);
+
+      return {
+        ...item,
+        password: wipedPassword,
+      };
+    }
+  });
+
+  return secureData;
+}
+
+/**
+ *
+ * @param {*} itemId
+ * @returns
+ */
+function requestShowPassword(itemId) {
+  const item = session.data.find((item) => item.id === itemId);
+
+  if (!item.password) {
+    return "";
+  }
+
+  return item.password;
+}
+
 module.exports = {
+  requestShowPassword,
+  requestCopyPassword,
   requireSession,
   init,
   lockVault,
