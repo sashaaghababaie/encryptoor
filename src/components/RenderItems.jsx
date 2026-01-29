@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "motion/react";
 import { useEffect, useState } from "react";
 import {
-  LuExternalLink,
+  // LuExternalLink,
   LuEye,
   LuEyeOff,
   LuTrash,
@@ -272,7 +272,6 @@ const LoginView = ({
   const height =
     (Object.values(item).filter((val) => val.length > 0).length - 3) * 56 + 8;
 
-  console.log(height);
   return (
     <motion.li
       className={`middle-btn-3 rounded-[30px] flex flex-col justify-center items-center relative overflow-hidden ${

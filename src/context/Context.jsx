@@ -7,26 +7,11 @@ export const ContextProvider = ({ children }) => {
   const [data, setData] = useState([]);
   const [session, setSession] = useState(null);
 
-  // const timerRef = useRef(null);
-
-  // useEffect(() => {
-  //   if (session) {
-  //     timerRef.current = setTimeout(() => {
-  //       window.api.lock();
-  //       setSession(null);
-  //       setData([]);
-  //     }, 60000);
-  //   }
-
-  //   return () => clearTimeout(timerRef.current);
-  // }, [session, data]);
-
   useEffect(() => {
-    window.api.onLocked((reason) => {
-      console.log("message recieved");
+    window.api.onLocked((r) => {
+      console.log(r);
       setSession(null);
       setData([]);
-      console.log("Vault locked:", reason);
     });
   }, []);
 
