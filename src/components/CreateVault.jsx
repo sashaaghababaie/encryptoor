@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { PasswordInput } from "./ui/Inputs";
 import { useAppContext } from "../context/Context";
 
@@ -110,16 +110,20 @@ export const CreateVault = ({ setShowLock }) => {
             Create Vault
           </motion.button>
         </div>
+
         <button
           onClick={() => setSecureHint(true)}
-          className="text-xs text-zinc-400 underline-offset-2 underline underline-zinc-400 hover:underline-zinc-300 hover:text-zinc-300"
+          className="text-xs text-blue-400 underline-offset-2 underline underline-blue-400 hover:underline-blue-300 hover:text-blue-300"
         >
-          Help me create a secure password
+          Help me create a basic secure password
         </button>
+
+        {/* <AnimatePresence> */}
         {secureHint && (
           <motion.ul
-            transition={{ type: "spring", stiffness: 300 }}
+            transition={{ type: "spring", stiffness: 300, damping: 22 }}
             initial={{ height: 0, opacity: 0 }}
+            exit={{ height: 0, opacity: 0 }}
             animate={{ height: 80, opacity: 1 }}
             className="text-xs font-bold overflow-none"
           >
@@ -158,6 +162,7 @@ export const CreateVault = ({ setShowLock }) => {
             </li>
           </motion.ul>
         )}
+        {/* </AnimatePresence> */}
       </motion.div>
     </div>
   );

@@ -23,20 +23,33 @@ const SCRYPT_PARAMS = {
 
 let session = null; // in-memory only
 let clipboardTimer = null;
+
+function restoreBackup(index = 1) {
+  const backup = `${VAULT_PATH}.bak${index}`;
+
+  try {
+    const data = fs.readFileSync(backup, "utf-8");
+
+    const vault = JSON.parse(data);
+
+    if (vault.magic !== MAGIC) {
+      throw new Error(ERRORS.INVALID_VAULT);
+    }
+
+    atomicWrite(VAULT_PATH, data);
+
+    return vault;
+  } catch (err) {
+    return null;
+  }
+}
+
 /**
  * Read and return the vault
  */
-// function readVault() {
-//   const vault = JSON.parse(fs.readFileSync(VAULT_PATH, "utf8"));
-
-//   if (vault.magic !== MAGIC) {
-//     throw new Error(ERRORS.INVALID_VAULT);
-//   }
-
-//   return vault;
-// }
-
 function readVault() {
+  // if Encryptoor path is not initialized or not exists
+  // we do not need to check for existing backups.
   if (!fs.existsSync(VAULT_DIR)) {
     throw new Error(ERRORS.NOT_INITIALIZED);
   }
@@ -51,13 +64,12 @@ function readVault() {
     return vault;
   } catch (err) {
     for (let i = 1; i <= 3; i++) {
-      const backupPath = `${VAULT_PATH}.bak${i}`;
+      const vault = restoreBackup(i);
 
-      if (fs.existsSync(backupPath)) {
-        throw new Error(ERRORS.NO_FILE_BUT_BACKUP_FOUND);
-      }
+      if (!vault) continue;
+
+      return vault;
     }
-
     throw err;
   }
 }
@@ -65,7 +77,12 @@ function readVault() {
  * Check if any vault exists
  */
 function init() {
-  readVault();
+  try {
+    readVault();
+    return true;
+  } catch (err) {
+    return false;
+  }
 }
 
 /**
@@ -172,7 +189,7 @@ function createVault(masterPassword, data = []) {
 function unlockVault(masterPassword) {
   try {
     const vault = readVault();
-
+    console.log(vault);
     const salt = Buffer.from(vault.header.kdf.salt, "base64");
     const kek = scryptKey(masterPassword, salt);
 
@@ -572,15 +589,4 @@ module.exports = {
 
 //   // restore EXACT vault
 //   atomicWrite(VAULT_PATH, JSON.stringify(vault));
-// }
-
-// function restoreBackup(index = 1) {
-//   const backup = `${VAULT_PATH}.bak${index}`;
-//   if (!fs.existsSync(backup)) {
-//     throw new Error("Backup not found");
-//   }
-
-//   const data = fs.readFileSync(backup);
-//   verifyVaultIntegrity(data); // HMAC / version check
-//   atomicWrite(VAULT_PATH, data);
 // }
