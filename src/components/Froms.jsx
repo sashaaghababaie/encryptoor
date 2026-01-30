@@ -15,7 +15,7 @@ export const LoginForm = ({ onClose, initData }) => {
     initData || { username: "", password: "", website: "", title: "" }
   );
 
-  const { setData, data, session } = useAppContext();
+  const { setData, session } = useAppContext();
 
   const handleInput = (e) => {
     setInputError("");
@@ -44,19 +44,9 @@ export const LoginForm = ({ onClose, initData }) => {
         updatedAt,
       };
 
-      // const newData = structuredClone(data);
-
-      // if (initData) {
-      //   let edited = newData.find((d) => d.id === loginInfo.id);
-      //   Object.assign(edited, loginInfo);
-      // } else {
-      //   newData.push(loginInfo);
-      // }
-
       const res = await window.api.upsert(session, loginInfo);
 
       if (res.success === true) {
-        console.log(res.data);
         setData(res.data);
         onClose();
       } else {
@@ -170,7 +160,7 @@ export const NoteForm = ({ onClose, initData }) => {
   const [inputError, setInputError] = useState("");
   const [error, setError] = useState("");
 
-  const { setData, data, session } = useAppContext();
+  const { setData, session } = useAppContext();
 
   const handleInput = (e) => {
     setError("");
@@ -198,15 +188,6 @@ export const NoteForm = ({ onClose, initData }) => {
         createdAt,
         updatedAt,
       };
-
-      // const newData = structuredClone(data);
-
-      // if (initData) {
-      //   let edited = newData.find((d) => d.id === noteInfo.id);
-      //   Object.assign(edited, noteInfo);
-      // } else {
-      //   newData.push(noteInfo);
-      // }
 
       const res = await window.api.upsert(session, noteInfo);
 

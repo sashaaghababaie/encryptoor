@@ -141,11 +141,6 @@ export const Panel = ({
                           setRemovingId={setRemovingId}
                           isRemoving={removingId === item.id}
                           onRemoveComplete={() => {
-                            // setData((prev) =>
-                            //   prev.filter((d) => d.id !== item.id)
-                            // );
-                            // const copy = [...data];
-
                             (async () => {
                               const res = await window.api.remove(
                                 session,

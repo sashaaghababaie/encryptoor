@@ -284,6 +284,23 @@ const LoginView = ({
     setTimeout(() => setRealPass(""), 5000);
   };
 
+  const handleEditLoginItem = async (item) => {
+    {
+      setPanelState("inactive");
+
+      if (item.password) {
+        const pass = await window.api.show(item.id);
+        item.password = pass;
+      }
+
+      setEditorState({
+        initData: item,
+        type: item.type,
+        show: true,
+        animate: "show",
+      });
+    }
+  };
   const height =
     (Object.values(item).filter((val) => val.length > 0).length - 3) * 56 + 8;
 
@@ -372,15 +389,7 @@ const LoginView = ({
               onHoverEnd={() => setHoverEdit(false)}
               whileHover={{ width: 126 }}
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              onClick={() => {
-                setPanelState("inactive");
-                setEditorState({
-                  initData: item,
-                  type: item.type,
-                  show: true,
-                  animate: "show",
-                });
-              }}
+              onClick={() => handleEditLoginItem(item)}
               className="w-[52px] h-[52px]
                         rounded-full bg-white/10 hover:bg-blue-500/50 text-white/30
                         text-lg flex items-center justify-center hover:text-white/70 overflow-hidden"
