@@ -1,6 +1,7 @@
 const { ipcMain } = require("electron");
 const {
   init,
+  exportVault,
   createVault,
   unlockVault,
   upsertItem,
@@ -10,6 +11,7 @@ const {
   removeItem,
   requestCopyPassword,
   requestShowPassword,
+  importVault,
 } = require("../src/api/vault");
 
 /**
@@ -26,6 +28,17 @@ function handleIpcs() {
 
   ipcMain.handle("vault:unlock", (_, pass) => {
     return unlockVault(pass);
+  });
+
+  ipcMain.handle(
+    "vault:export",
+    (_, sessionId, useOldPass, oldPass, newPass) => {
+      return exportVault(sessionId, useOldPass, oldPass, newPass);
+    }
+  );
+
+  ipcMain.handle("vault:import", (_, sessionId, pass, filePath) => {
+    return importVault(sessionId, pass, filePath);
   });
 
   ipcMain.handle("vault:upsert", (_, sessionId, item) => {

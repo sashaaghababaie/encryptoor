@@ -189,7 +189,7 @@ function createVault(masterPassword, data = []) {
 function unlockVault(masterPassword) {
   try {
     const vault = readVault();
-    console.log(vault);
+
     const salt = Buffer.from(vault.header.kdf.salt, "base64");
     const kek = scryptKey(masterPassword, salt);
 
@@ -228,7 +228,9 @@ function requireSession(sessionId) {
 
   clearTimeout(session.timer);
 
-  session.timer = setTimeout(() => destroySession(sessionId), session.timeout);
+  session.timer = setTimeout(() => {
+    destroySession(sessionId);
+  }, session.timeout);
 }
 
 /**
@@ -238,6 +240,7 @@ function destroySession() {
   if (!session) return;
 
   clearTimeout(session.timer);
+
   lockVault();
 
   vaultEvents.emit("vault:locked", { reason: "timeout" });
@@ -275,6 +278,124 @@ function removeItem(sessionId, itemId) {
     writeVault(VAULT_PATH, JSON.stringify(vault, null, 2));
 
     return { success: true, data: secureData(session.data) };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+function exportVault(sessionId, useOldPass, currentPass, newPass = "") {
+  try {
+    requireSession(sessionId);
+
+    if (!currentPass) {
+      throw new Error("You need to type the vault pass.");
+    }
+
+    const vault = readVault();
+
+    console.log(currentPass);
+
+    let data;
+
+    try {
+      const salt = Buffer.from(vault.header.kdf.salt, "base64");
+      const kek = scryptKey(currentPass, salt);
+
+      aesDecrypt(
+        kek,
+        Buffer.from(vault.protected.vaultKeyIv, "base64"),
+        Buffer.from(vault.protected.vaultKeyTag, "base64"),
+        Buffer.from(vault.protected.encryptedVaultKey, "base64")
+      );
+
+      // data = JSON.parse(
+      //   aesDecrypt(
+      //     vaultKey,
+      //     Buffer.from(vault.data.iv, "base64"),
+      //     Buffer.from(vault.data.authTag, "base64"),
+      //     Buffer.from(vault.data.encrypted, "base64")
+      //   ).toString("utf8")
+      // );
+    } catch (err) {
+      if (err.message === "Unsupported state or unable to authenticate data") {
+        throw new Error(ERRORS.WRONG_PASSWORD);
+      }
+
+      throw err;
+    }
+
+    const current = new Date();
+    const dateTime = current.toISOString().slice(0, -5).split("T");
+    const date = dateTime[0];
+    const time = dateTime[1].split(":").join("-");
+    const filename = `vault_backup_${date}_${time}.json`;
+
+    const EXPORT_PATH = path.join(app.getPath("desktop"), filename);
+
+    if (useOldPass === true && newPass.length === 0) {
+      const encrypted = aesEncrypt(
+        session.vaultKey,
+        Buffer.from(JSON.stringify(session.data))
+      );
+
+      vault.data = {
+        encrypted: encrypted.encrypted.toString("base64"),
+        iv: encrypted.iv.toString("base64"),
+        authTag: encrypted.tag.toString("base64"),
+      };
+
+      vault.header.createdAt = current.getTime();
+      vault.header.updatedAt = current.getTime();
+
+      atomicWrite(EXPORT_PATH, JSON.stringify(vault, null, 2));
+
+      return { success: true };
+    }
+
+    if (useOldPass === false && newPass.length > 0) {
+      const salt = crypto.randomBytes(16);
+      const kek = scryptKey(newPass, salt);
+
+      const vaultKey = crypto.randomBytes(32);
+
+      const wrapped = aesEncrypt(kek, vaultKey);
+
+      const encryptedData = aesEncrypt(
+        vaultKey,
+        Buffer.from(JSON.stringify(session.data))
+      );
+
+      const vault = {
+        magic: MAGIC,
+        version: VERSION,
+        header: {
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          kdf: {
+            name: "scrypt",
+            params: SCRYPT_PARAMS,
+            salt: salt.toString("base64"),
+          },
+          crypto: { cipher: "aes-256-gcm" },
+        },
+        protected: {
+          encryptedVaultKey: wrapped.encrypted.toString("base64"),
+          vaultKeyIv: wrapped.iv.toString("base64"),
+          vaultKeyTag: wrapped.tag.toString("base64"),
+        },
+        data: {
+          encrypted: encryptedData.encrypted.toString("base64"),
+          iv: encryptedData.iv.toString("base64"),
+          authTag: encryptedData.tag.toString("base64"),
+        },
+      };
+
+      atomicWrite(EXPORT_PATH, JSON.stringify(vault, null, 2));
+
+      return { success: true };
+    }
+
+    return { success: false, error: "Bad params" };
   } catch (err) {
     return { success: false, error: err.message };
   }
@@ -343,7 +464,6 @@ function changePassword(oldPass, newPass) {
     const oldSalt = Buffer.from(vault.header.kdf.salt, "base64");
     const oldKek = scryptKey(oldPass, oldSalt);
 
-    // verify old password by decrypting vault key
     const vaultKey = aesDecrypt(
       oldKek,
       Buffer.from(vault.protected.vaultKeyIv, "base64"),
@@ -520,7 +640,10 @@ function requestCopyPassword(itemId) {
     if (clipboardTimer) clearTimeout(clipboardTimer);
 
     clipboardTimer = setTimeout(() => {
-      clipboard.clear();
+      if (clipboard.readText() === item.password) {
+        clipboard.clear();
+      }
+
       clipboardTimer = null;
     }, 30_000);
   }
@@ -548,6 +671,126 @@ function secureData(data) {
 
 /**
  *
+ * @param {string} sessionId
+ * @param {string} pass
+ * @param {string} filePath
+ * @returns
+ */
+function importVault(sessionId, pass, filePath) {
+  try {
+    requireSession(sessionId);
+
+    if (!pass || !filePath) {
+      throw new Error("Bad Params");
+    }
+
+    if (!fs.existsSync(filePath)) {
+      throw new Error("File does not exist");
+    }
+
+    const stat = fs.statSync(filePath);
+
+    if (!stat.isFile()) {
+      throw new Error("Invalid file");
+    }
+
+    if (stat.size > 50 * 1024 * 1024) {
+      throw new Error("Vault file too large");
+    }
+
+    const importedVault = JSON.parse(fs.readFileSync(filePath, "utf8"));
+
+    if (importedVault.magic !== MAGIC) {
+      throw new Error(ERRORS.INVALID_VAULT);
+    }
+
+    let imported;
+
+    try {
+      const salt = Buffer.from(vault.header.kdf.salt, "base64");
+      const kek = scryptKey(pass, salt);
+
+      const vaultKey = aesDecrypt(
+        kek,
+        Buffer.from(vault.protected.vaultKeyIv, "base64"),
+        Buffer.from(vault.protected.vaultKeyTag, "base64"),
+        Buffer.from(vault.protected.encryptedVaultKey, "base64")
+      );
+
+      imported = JSON.parse(
+        aesDecrypt(
+          vaultKey,
+          Buffer.from(vault.data.iv, "base64"),
+          Buffer.from(vault.data.authTag, "base64"),
+          Buffer.from(vault.data.encrypted, "base64")
+        ).toString("utf8")
+      );
+    } catch (err) {
+      if (err.message === "Unsupported state or unable to authenticate data") {
+        throw new Error(ERRORS.WRONG_PASSWORD);
+      }
+
+      throw err;
+    }
+
+    const state = {
+      new: 0,
+      updated: 0,
+      skipped: 0,
+    };
+
+    const copy = structuredClone(session.data);
+
+    for (const importedItem of imported) {
+      const cleanItem = sanitizeEntry(importedItem);
+
+      if (!cleanItem) {
+        state.skipped++;
+        continue;
+      }
+
+      const found = copy.find((item) => item.id === cleanItem.id);
+
+      if (!found) {
+        copy.push(cleanItem);
+        state.new++;
+      } else {
+        if (cleanItem.updatedAt > found.updatedAt) {
+          found = cleanItem;
+          state.updated++;
+        } else {
+          state.skipped++;
+        }
+      }
+    }
+
+    session.data = copy;
+
+    const encrypted = aesEncrypt(
+      session.vaultKey,
+      Buffer.from(JSON.stringify(copy))
+    );
+
+    const vault = readVault();
+
+    vault.data = {
+      encrypted: encrypted.encrypted.toString("base64"),
+      iv: encrypted.iv.toString("base64"),
+      authTag: encrypted.tag.toString("base64"),
+    };
+
+    vault.header.updatedAt = Date.now();
+
+    writeVault(VAULT_PATH, JSON.stringify(vault, null, 2));
+
+    return { success: true, state, data: secureData(copy) };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ *
  * @param {*} itemId
  * @returns
  */
@@ -562,6 +805,8 @@ function requestShowPassword(itemId) {
 }
 
 module.exports = {
+  exportVault,
+  importVault,
   requestShowPassword,
   requestCopyPassword,
   requireSession,

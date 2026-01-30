@@ -18,7 +18,7 @@ export default function ExportBackupModal({ onClose, isOpen }) {
   const [success, setSuccess] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const { passKey, data } = useAppContext();
+  const { session } = useAppContext();
 
   useEffect(() => {
     setNewPass("");
@@ -67,10 +67,6 @@ export default function ExportBackupModal({ onClose, isOpen }) {
         err.current = "Required";
       }
 
-      if (currentPass.length !== 0 && currentPass !== passKey) {
-        err.current = "Not Match";
-      }
-
       if (state === "new") {
         if (repeatPass.length === 0) {
           err.new = "Required";
@@ -92,12 +88,18 @@ export default function ExportBackupModal({ onClose, isOpen }) {
 
       if (err.current || err.new || err.repeat) {
         setErrors(err);
-        throw new Error("");
+        throw new Error("Required");
       }
 
-      const pass = state === "current" ? currentPass : newPass;
+      // const pass = state === "current" ? currentPass : newPass;
+      const useOldPass = newPass.length === 0 && state === "current";
 
-      const res = await window.api.exportVault(pass, data);
+      const res = await window.api.export(
+        session,
+        useOldPass,
+        currentPass,
+        newPass
+      );
 
       if (res.success) {
         setSuccess(true);
@@ -111,8 +113,8 @@ export default function ExportBackupModal({ onClose, isOpen }) {
         transition: { duration: 0.25, times: [0, 0.2, 0.4, 0.6, 0.8, 1] },
       });
 
-      if (err.message.match("ENOSPC")) {
-        setErrorMsg("There is no space left on the device");
+      if (err.message !== "Required") {
+        setErrorMsg(err.message);
       }
 
       setSuccess(false);

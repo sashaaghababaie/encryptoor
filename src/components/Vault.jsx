@@ -1,5 +1,11 @@
 import { motion, AnimatePresence } from "motion/react";
-import { LuFilePlus, LuCircleUserRound, LuLock, LuShare } from "react-icons/lu";
+import {
+  LuFilePlus,
+  LuCircleUserRound,
+  LuLock,
+  LuShare,
+  LuImport,
+} from "react-icons/lu";
 import { useState, useEffect } from "react";
 import { Panel } from "./Panel";
 import { LoginForm, NoteForm } from "./Froms";
@@ -8,6 +14,7 @@ import { Lock, ChangePassword } from "./Lock";
 import { useAppContext } from "../context/Context";
 import { VaultDoor } from "./anim/VaultDoor";
 import ExportBackupModal from "./ExportBackupModal";
+import ImportBackupModal from "./ImportBackupModal";
 
 /**
  *
@@ -35,7 +42,10 @@ const OpenVault = ({ setLock }) => {
   const [panelState, setPanelState] = useState("active");
   const [hoverLock, setHoverLock] = useState(false);
   const [hoverBackup, setHoverBackup] = useState(false);
+  const [hoverImport, setHoverImport] = useState(false);
   const [showBackupModal, setShowBackupModal] = useState(false);
+
+  const [showImportModal, setShowImportModal] = useState(false);
   const [editor, setEditor] = useState({
     show: false,
     type: "login",
@@ -57,6 +67,10 @@ const OpenVault = ({ setLock }) => {
       <ExportBackupModal
         isOpen={showBackupModal}
         onClose={() => setShowBackupModal(false)}
+      />
+      <ImportBackupModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
       />
       <motion.div
         initial={{ scale: 0.5, opacity: 0.5 }}
@@ -163,7 +177,7 @@ const OpenVault = ({ setLock }) => {
           editor={editor}
         />
       </motion.div>
-      <div className="fixed right-2 bottom-[64px] z-20">
+      <div className="fixed right-2 bottom-[120px] z-20">
         <motion.button
           onHoverStart={() => setHoverLock(true)}
           onHoverEnd={() => setHoverLock(false)}
@@ -183,7 +197,7 @@ const OpenVault = ({ setLock }) => {
           )}
         </motion.button>
       </div>
-      <div className="fixed right-2 bottom-2 z-20">
+      <div className="fixed right-2 bottom-[64px] z-20">
         <motion.button
           onHoverStart={() => setHoverBackup(true)}
           onHoverEnd={() => setHoverBackup(false)}
@@ -200,6 +214,26 @@ const OpenVault = ({ setLock }) => {
             </span>
           ) : (
             <LuShare />
+          )}
+        </motion.button>
+      </div>
+      <div className="fixed right-2 bottom-2 z-20">
+        <motion.button
+          onHoverStart={() => setHoverImport(true)}
+          onHoverEnd={() => setHoverImport(false)}
+          whileHover={{ width: 126 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          onClick={() => setShowImportModal(true)}
+          className="w-[52px] h-[52px]
+                    rounded-full bg-blue-600 font-bold hover:bg-blue-500 text-white
+                    text-lg flex items-center justify-center hover:text-white overflow-hidden"
+        >
+          {hoverImport ? (
+            <span className="select-none block text-xs font-bold w-[126px] shrink-0">
+              Import Backup
+            </span>
+          ) : (
+            <LuImport />
           )}
         </motion.button>
       </div>

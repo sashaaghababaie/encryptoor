@@ -17,6 +17,16 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.invoke("vault:remove", sessionId, itemId),
   changePassword: (oldPass, newPass) =>
     ipcRenderer.invoke("vault:changePassword", oldPass, newPass),
+  import: (sessionId, pass, filePath) =>
+    ipcRenderer.invoke("vault:export", sessionId, pass, filePath),
+  export: (sessionId, useOldPass, currentPass, newPass) =>
+    ipcRenderer.invoke(
+      "vault:export",
+      sessionId,
+      useOldPass,
+      currentPass,
+      newPass
+    ),
 });
 
 // contextBridge.exposeInMainWorld("api", {
