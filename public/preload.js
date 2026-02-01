@@ -4,21 +4,44 @@ const { ipcRenderer, contextBridge } = require("electron");
 
 contextBridge.exposeInMainWorld("api", {
   init: () => ipcRenderer.invoke("vault:init"),
+
   getSession: (sessionId) => ipcRenderer.invoke("vault:session", sessionId),
+
   create: (pass, data) => ipcRenderer.invoke("vault:create", pass, data),
+
   unlock: (pass) => ipcRenderer.invoke("vault:unlock", pass),
+
   lock: () => ipcRenderer.invoke("vault:lock"),
+
   copy: (itemId) => ipcRenderer.invoke("vault:copyPassword", itemId),
+
   show: (itemId) => ipcRenderer.invoke("vault:showPassword", itemId),
+
   onLocked: (cb) => ipcRenderer.on("vault:locked", (_, reason) => cb(reason)),
+
   upsert: (sessionId, item) =>
     ipcRenderer.invoke("vault:upsert", sessionId, item),
+
   remove: (sessionId, itemId) =>
     ipcRenderer.invoke("vault:remove", sessionId, itemId),
+
   changePassword: (oldPass, newPass) =>
     ipcRenderer.invoke("vault:changePassword", oldPass, newPass),
-  import: (sessionId, pass, filePath) =>
-    ipcRenderer.invoke("vault:import", sessionId, pass, filePath),
+
+  importByPath: (sessionId, pass, filePath) =>
+    ipcRenderer.invoke("vault:importByPath", sessionId, pass, filePath),
+
+  importByBuffer: (sessionId, pass, buffer) => {
+    const nodeBuffer = Buffer.from(buffer);
+
+    return ipcRenderer.invoke(
+      "vault:importByBuffer",
+      sessionId,
+      pass,
+      nodeBuffer
+    );
+  },
+
   export: (sessionId, useOldPass, currentPass, newPass) =>
     ipcRenderer.invoke(
       "vault:export",

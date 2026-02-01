@@ -12,6 +12,8 @@ const {
   requestCopyPassword,
   requestShowPassword,
   importVault,
+  importVaultByFilePath,
+  importVaultByBuffer,
 } = require("../src/api/vault");
 
 /**
@@ -37,8 +39,12 @@ function handleIpcs() {
     }
   );
 
-  ipcMain.handle("vault:import", (_, sessionId, pass, filePath) => {
-    return importVault(sessionId, pass, filePath);
+  ipcMain.handle("vault:importByPath", (_, sessionId, pass, filePath) => {
+    return importVaultByFilePath(sessionId, pass, filePath);
+  });
+
+  ipcMain.handle("vault:importByBuffer", (_, sessionId, pass, buffer) => {
+    return importVaultByBuffer(sessionId, pass, buffer);
   });
 
   ipcMain.handle("vault:upsert", (_, sessionId, item) => {

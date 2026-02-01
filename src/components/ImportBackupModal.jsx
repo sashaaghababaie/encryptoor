@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "motion/react";
 import { LuX } from "react-icons/lu";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppContext } from "../context/Context";
 import { PasswordInput } from "./ui/Inputs";
 import Modal from "./ui/Modal";
@@ -13,10 +13,16 @@ const ImportDropzone = ({ setFile }) => {
     setError("");
 
     if (!acceptedFiles.length) return;
+
     const filePath = acceptedFiles[0].path;
     const fileName = acceptedFiles[0].name;
+    let buffer = null;
 
-    setFile({ filePath, fileName });
+    if (filePath.trim() === "") {
+      buffer = await acceptedFiles[0].arrayBuffer();
+    }
+
+    setFile({ filePath, fileName, buffer });
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -70,11 +76,8 @@ const ImportDropzone = ({ setFile }) => {
 
 export default function ImportBackupModal({ onClose, isOpen }) {
   const [file, setFile] = useState(null);
-
   const [pass, setPass] = useState("");
-
   const [buttonAnim, setButtonAnim] = useState({ animate: {}, transition: {} });
-
   const [status, setStatus] = useState(null);
   const [inputError, setInputError] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
@@ -82,6 +85,10 @@ export default function ImportBackupModal({ onClose, isOpen }) {
   const [showSuccess, setShowSuccess] = useState(false);
 
   const { session, setData } = useAppContext();
+
+  useEffect(() => {
+    if (!file) setPass("");
+  }, [file]);
 
   const handleInputPass = (e) => {
     setInputError("");
@@ -105,7 +112,7 @@ export default function ImportBackupModal({ onClose, isOpen }) {
     setErrorMsg("");
 
     try {
-      if (!file || !file.filePath) {
+      if (!file) {
         throw new Error("No File.");
       }
 
@@ -114,7 +121,13 @@ export default function ImportBackupModal({ onClose, isOpen }) {
         throw new Error("Required");
       }
 
-      const res = await window.api.import(session, pass, file.filePath);
+      let res;
+
+      if (file.buffer) {
+        res = await window.api.importByBuffer(session, pass, file.buffer);
+      } else {
+        res = await window.api.importByPath(session, pass, file.filePath);
+      }
 
       if (res.success === true) {
         setSuccess(true);

@@ -669,6 +669,130 @@ function secureData(data) {
   return secureData;
 }
 
+function importVault(importedVault, pass) {
+  try {
+    const salt = Buffer.from(importedVault.header.kdf.salt, "base64");
+    const kek = scryptKey(pass, salt);
+
+    const vaultKey = aesDecrypt(
+      kek,
+      Buffer.from(importedVault.protected.vaultKeyIv, "base64"),
+      Buffer.from(importedVault.protected.vaultKeyTag, "base64"),
+      Buffer.from(importedVault.protected.encryptedVaultKey, "base64")
+    );
+
+    const imported = JSON.parse(
+      aesDecrypt(
+        vaultKey,
+        Buffer.from(importedVault.data.iv, "base64"),
+        Buffer.from(importedVault.data.authTag, "base64"),
+        Buffer.from(importedVault.data.encrypted, "base64")
+      ).toString("utf8")
+    );
+
+    const status = {
+      new: 0,
+      skipped: 0,
+    };
+
+    const copy = structuredClone(session.data);
+
+    for (const importedItem of imported) {
+      const newCleanItem = sanitizeEntry(importedItem);
+
+      if (!newCleanItem) {
+        status.skipped++;
+        continue;
+      }
+
+      const found = copy.find((item) => item.id === newCleanItem.id);
+
+      // const index = copy.findIndex((item) => item.id === newCleanItem.id);
+      // if (index !== -1) {
+      //   copy[index] = newCleanItem;
+      // }
+
+      if (!found) {
+        copy.push(newCleanItem);
+        status.new++;
+      } else {
+        if (newCleanItem.updatedAt > found.updatedAt) {
+          newCleanItem.title = newCleanItem.title + " [Newer from Backup]";
+          copy.push(newCleanItem);
+          status.new++;
+        } else if (newCleanItem.updatedAt < found.updatedAt) {
+          newCleanItem.title = newCleanItem.title + " [Older from Backup]";
+          copy.push(newCleanItem);
+          status.new++;
+        } else {
+          status.skipped++;
+        }
+      }
+    }
+
+    const encrypted = aesEncrypt(
+      session.vaultKey,
+      Buffer.from(JSON.stringify(copy))
+    );
+
+    const vault = readVault();
+
+    vault.data = {
+      encrypted: encrypted.encrypted.toString("base64"),
+      iv: encrypted.iv.toString("base64"),
+      authTag: encrypted.tag.toString("base64"),
+    };
+
+    vault.header.updatedAt = Date.now();
+
+    writeVault(VAULT_PATH, JSON.stringify(vault, null, 2));
+
+    session.data = copy;
+
+    return { status, data: copy };
+  } catch (err) {
+    if (err.message.includes("authenticate") || err.message.includes("auth")) {
+      throw new Error(ERRORS.WRONG_PASSWORD);
+    }
+    throw err;
+  }
+}
+
+function importVaultByBuffer(sessionId, pass, buffer) {
+  try {
+    requireSession(sessionId);
+
+    if (!pass || !buffer) {
+      throw new Error("Bad Params");
+    }
+
+    if (buffer.length > 50 * 1024 * 1024) {
+      throw new Error("Vault file too large");
+    }
+
+    const importedVault = JSON.parse(buffer.toString("utf-8"));
+
+    if (
+      !importedVault?.magic ||
+      !importedVault?.header?.kdf ||
+      !importedVault?.protected ||
+      !importedVault?.data
+    ) {
+      throw new Error(ERRORS.INVALID_VAULT);
+    }
+
+    if (importedVault.magic !== MAGIC) {
+      throw new Error(ERRORS.INVALID_VAULT);
+    }
+
+    const { status, data } = importVault(importedVault, pass);
+
+    return { success: true, status, data: secureData(data) };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
 /**
  *
  * @param {string} sessionId
@@ -676,7 +800,7 @@ function secureData(data) {
  * @param {string} filePath
  * @returns
  */
-function importVault(sessionId, pass, filePath) {
+function importVaultByFilePath(sessionId, pass, filePath) {
   try {
     requireSession(sessionId);
 
@@ -700,92 +824,22 @@ function importVault(sessionId, pass, filePath) {
 
     const importedVault = JSON.parse(fs.readFileSync(filePath, "utf8"));
 
+    if (
+      !importedVault?.magic ||
+      !importedVault?.header?.kdf ||
+      !importedVault?.protected ||
+      !importedVault?.data
+    ) {
+      throw new Error(ERRORS.INVALID_VAULT);
+    }
+
     if (importedVault.magic !== MAGIC) {
       throw new Error(ERRORS.INVALID_VAULT);
     }
 
-    let imported;
+    const { status, data } = importVault(importedVault, pass);
 
-    try {
-      const salt = Buffer.from(importedVault.header.kdf.salt, "base64");
-      const kek = scryptKey(pass, salt);
-
-      const vaultKey = aesDecrypt(
-        kek,
-        Buffer.from(importedVault.protected.vaultKeyIv, "base64"),
-        Buffer.from(importedVault.protected.vaultKeyTag, "base64"),
-        Buffer.from(importedVault.protected.encryptedVaultKey, "base64")
-      );
-
-      imported = JSON.parse(
-        aesDecrypt(
-          vaultKey,
-          Buffer.from(importedVault.data.iv, "base64"),
-          Buffer.from(importedVault.data.authTag, "base64"),
-          Buffer.from(importedVault.data.encrypted, "base64")
-        ).toString("utf8")
-      );
-    } catch (err) {
-      if (err.message === "Unsupported state or unable to authenticate data") {
-        throw new Error(ERRORS.WRONG_PASSWORD);
-      }
-
-      throw err;
-    }
-
-    const status = {
-      new: 0,
-      skipped: 0,
-    };
-
-    const copy = structuredClone(session.data);
-
-    for (const importedItem of imported) {
-      const newCleanItem = sanitizeEntry(importedItem);
-
-      if (!newCleanItem) {
-        status.skipped++;
-        continue;
-      }
-
-      const found = copy.find((item) => item.id === newCleanItem.id);
-
-      if (!found) {
-        copy.push(newCleanItem);
-        status.new++;
-      } else {
-        if (newCleanItem.updatedAt > found.updatedAt) {
-          newCleanItem.title = newCleanItem.title + " [Newer from Backup]";
-          found = newCleanItem;
-        } else if (newCleanItem.updatedAt < found.updatedAt) {
-          newCleanItem.title = newCleanItem.title + " [Older from Backup]";
-          found = newCleanItem;
-        } else {
-          status.skipped++;
-        }
-      }
-    }
-
-    session.data = copy;
-
-    const encrypted = aesEncrypt(
-      session.vaultKey,
-      Buffer.from(JSON.stringify(copy))
-    );
-
-    const vault = readVault();
-
-    vault.data = {
-      encrypted: encrypted.encrypted.toString("base64"),
-      iv: encrypted.iv.toString("base64"),
-      authTag: encrypted.tag.toString("base64"),
-    };
-
-    vault.header.updatedAt = Date.now();
-
-    writeVault(VAULT_PATH, JSON.stringify(vault, null, 2));
-
-    return { success: true, status, data: secureData(copy) };
+    return { success: true, status, data: secureData(data) };
   } catch (err) {
     return { success: false, error: err.message };
   }
@@ -808,7 +862,8 @@ function requestShowPassword(itemId) {
 
 module.exports = {
   exportVault,
-  importVault,
+  importVaultByFilePath,
+  importVaultByBuffer,
   requestShowPassword,
   requestCopyPassword,
   requireSession,
