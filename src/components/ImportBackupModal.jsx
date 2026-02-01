@@ -249,12 +249,10 @@ export default function ImportBackupModal({ onClose, isOpen }) {
               <p className="text-emerald-300 text-center font-black p-2">
                 {status.new} new Item{status.new <= 1 ? "" : "s"} imported.
               </p>
-
-              <p className="text-emerald-300 text-center font-black p-2">
+              {/* <p className="text-emerald-300 text-center font-black p-2">
                 {status.updated} Item{status.updated <= 1 ? "" : "s"}{" "}
                 overwritten.
-              </p>
-
+              </p> */}
               <p className="text-emerald-300 text-center font-black p-2">
                 {status.skipped} Item{status.skipped <= 1 ? "" : "s"} skipped.
               </p>

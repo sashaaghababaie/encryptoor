@@ -735,29 +735,31 @@ function importVault(sessionId, pass, filePath) {
 
     const status = {
       new: 0,
-      updated: 0,
       skipped: 0,
     };
 
     const copy = structuredClone(session.data);
 
     for (const importedItem of imported) {
-      const cleanItem = sanitizeEntry(importedItem);
+      const newCleanItem = sanitizeEntry(importedItem);
 
-      if (!cleanItem) {
+      if (!newCleanItem) {
         status.skipped++;
         continue;
       }
 
-      const found = copy.find((item) => item.id === cleanItem.id);
+      const found = copy.find((item) => item.id === newCleanItem.id);
 
       if (!found) {
-        copy.push(cleanItem);
+        copy.push(newCleanItem);
         status.new++;
       } else {
-        if (cleanItem.updatedAt > found.updatedAt) {
-          found = cleanItem;
-          status.updated++;
+        if (newCleanItem.updatedAt > found.updatedAt) {
+          newCleanItem.title = newCleanItem.title + " [Newer from Backup]";
+          found = newCleanItem;
+        } else if (newCleanItem.updatedAt < found.updatedAt) {
+          newCleanItem.title = newCleanItem.title + " [Older from Backup]";
+          found = newCleanItem;
         } else {
           status.skipped++;
         }
