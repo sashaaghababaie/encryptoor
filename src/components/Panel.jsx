@@ -21,7 +21,7 @@ export const Panel = ({
   const [filter, setFilter] = useState(["login", "note"]);
   const [error, setError] = useState("");
 
-  const { data, setData, session } = useAppContext();
+  const { setData, session } = useAppContext();
 
   useEffect(() => setShowFirstTime(true), []);
 

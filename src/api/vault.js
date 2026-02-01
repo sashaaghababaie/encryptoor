@@ -262,7 +262,7 @@ function removeItem(sessionId, itemId) {
 
     const encrypted = aesEncrypt(
       session.vaultKey,
-      Buffer.from(JSON.stringify(currentData))
+      Buffer.from(JSON.stringify(session.data))
     );
 
     const vault = readVault();
@@ -707,22 +707,22 @@ function importVault(sessionId, pass, filePath) {
     let imported;
 
     try {
-      const salt = Buffer.from(vault.header.kdf.salt, "base64");
+      const salt = Buffer.from(importedVault.header.kdf.salt, "base64");
       const kek = scryptKey(pass, salt);
 
       const vaultKey = aesDecrypt(
         kek,
-        Buffer.from(vault.protected.vaultKeyIv, "base64"),
-        Buffer.from(vault.protected.vaultKeyTag, "base64"),
-        Buffer.from(vault.protected.encryptedVaultKey, "base64")
+        Buffer.from(importedVault.protected.vaultKeyIv, "base64"),
+        Buffer.from(importedVault.protected.vaultKeyTag, "base64"),
+        Buffer.from(importedVault.protected.encryptedVaultKey, "base64")
       );
 
       imported = JSON.parse(
         aesDecrypt(
           vaultKey,
-          Buffer.from(vault.data.iv, "base64"),
-          Buffer.from(vault.data.authTag, "base64"),
-          Buffer.from(vault.data.encrypted, "base64")
+          Buffer.from(importedVault.data.iv, "base64"),
+          Buffer.from(importedVault.data.authTag, "base64"),
+          Buffer.from(importedVault.data.encrypted, "base64")
         ).toString("utf8")
       );
     } catch (err) {
@@ -733,7 +733,7 @@ function importVault(sessionId, pass, filePath) {
       throw err;
     }
 
-    const state = {
+    const status = {
       new: 0,
       updated: 0,
       skipped: 0,
@@ -745,7 +745,7 @@ function importVault(sessionId, pass, filePath) {
       const cleanItem = sanitizeEntry(importedItem);
 
       if (!cleanItem) {
-        state.skipped++;
+        status.skipped++;
         continue;
       }
 
@@ -753,13 +753,13 @@ function importVault(sessionId, pass, filePath) {
 
       if (!found) {
         copy.push(cleanItem);
-        state.new++;
+        status.new++;
       } else {
         if (cleanItem.updatedAt > found.updatedAt) {
           found = cleanItem;
-          state.updated++;
+          status.updated++;
         } else {
-          state.skipped++;
+          status.skipped++;
         }
       }
     }
@@ -783,7 +783,7 @@ function importVault(sessionId, pass, filePath) {
 
     writeVault(VAULT_PATH, JSON.stringify(vault, null, 2));
 
-    return { success: true, state, data: secureData(copy) };
+    return { success: true, status, data: secureData(copy) };
   } catch (err) {
     return { success: false, error: err.message };
   }

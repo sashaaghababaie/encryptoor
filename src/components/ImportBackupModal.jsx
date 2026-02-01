@@ -121,6 +121,8 @@ export default function ImportBackupModal({ onClose, isOpen }) {
         setTimeout(() => setShowSuccess(true), 100);
         setStatus(res.status);
         setData(res.data);
+      } else {
+        throw new Error(res.error);
       }
     } catch (err) {
       setButtonAnim({
@@ -198,6 +200,19 @@ export default function ImportBackupModal({ onClose, isOpen }) {
                         placeholer="asdf"
                       />
                     </div>
+                    <AnimatePresence>
+                      {errorMsg.length > 0 && (
+                        <motion.div
+                          transition={{ duration: 0.12 }}
+                          className="flex flex-col gap-2 py-2 text-sm items-center"
+                          initial={{ opacity: 0, height: 0 }}
+                          exit={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 24 }}
+                        >
+                          <p className="text-sm text-rose-500">{errorMsg}</p>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                     <div className="flex gap-4">
                       <motion.button
                         onClick={handleClose}
@@ -212,7 +227,7 @@ export default function ImportBackupModal({ onClose, isOpen }) {
                         className="shadow-lg shadow-emerald-300/20 mt-4 w-full h-12 border border-transparent rounded-full bg-emerald-300 text-black font-bold"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        // onClick={handleExport}
+                        onClick={handleImport}
                       >
                         Import
                       </motion.button>
@@ -236,11 +251,12 @@ export default function ImportBackupModal({ onClose, isOpen }) {
               </p>
 
               <p className="text-emerald-300 text-center font-black p-2">
-                {status.updated} Item{status.new <= 1 ? "" : "s"} overwritten.
+                {status.updated} Item{status.updated <= 1 ? "" : "s"}{" "}
+                overwritten.
               </p>
 
               <p className="text-emerald-300 text-center font-black p-2">
-                {status.updated} Item{status.new <= 1 ? "" : "s"} skipped.
+                {status.skipped} Item{status.skipped <= 1 ? "" : "s"} skipped.
               </p>
             </motion.div>
           )}

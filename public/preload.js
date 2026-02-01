@@ -18,7 +18,7 @@ contextBridge.exposeInMainWorld("api", {
   changePassword: (oldPass, newPass) =>
     ipcRenderer.invoke("vault:changePassword", oldPass, newPass),
   import: (sessionId, pass, filePath) =>
-    ipcRenderer.invoke("vault:export", sessionId, pass, filePath),
+    ipcRenderer.invoke("vault:import", sessionId, pass, filePath),
   export: (sessionId, useOldPass, currentPass, newPass) =>
     ipcRenderer.invoke(
       "vault:export",
