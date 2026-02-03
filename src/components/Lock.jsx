@@ -14,6 +14,17 @@ export const Lock = ({ setState, state }) => {
 
   const { setData, setInitialized, setSession } = useAppContext();
 
+  useEffect(() => {
+    const down = (e) => {
+      if (e.key === "Enter") {
+        handleOpenVault();
+      }
+    };
+
+    window.addEventListener("keydown", down);
+    return () => window.removeEventListener("keydown", down);
+  }, [password]);
+
   const handleOpenVault = async () => {
     try {
       if (password.length === 0) {

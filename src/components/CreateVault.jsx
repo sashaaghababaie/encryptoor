@@ -11,9 +11,16 @@ export const CreateVault = ({ setShowLock }) => {
 
   const { setInitialized } = useAppContext();
 
-  const handleInput = (e) => {
-    setInputs((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
+  useEffect(() => {
+    const down = (e) => {
+      if (e.key === "Enter") {
+        handleCreateVault();
+      }
+    };
+
+    window.addEventListener("keydown", down);
+    return () => window.removeEventListener("keydown", down);
+  }, [inputs]);
 
   useEffect(() => {
     if (inputs.repeat.length > 0 && inputs.password !== inputs.repeat) {
@@ -22,6 +29,10 @@ export const CreateVault = ({ setShowLock }) => {
       setError("");
     }
   }, [inputs]);
+
+  const handleInput = (e) => {
+    setInputs((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
 
   const handleCreateVault = async () => {
     try {

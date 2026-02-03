@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { nanoid } from "nanoid";
 import { useAppContext } from "../context/Context";
@@ -16,6 +16,17 @@ export const LoginForm = ({ onClose, initData }) => {
   );
 
   const { setData, session } = useAppContext();
+
+  useEffect(() => {
+    const down = (e) => {
+      if (e.key === "Enter") {
+        handleSave();
+      }
+    };
+
+    window.addEventListener("keydown", down);
+    return () => window.removeEventListener("keydown", down);
+  }, [loginData]);
 
   const handleInput = (e) => {
     setInputError("");
@@ -161,6 +172,17 @@ export const NoteForm = ({ onClose, initData }) => {
   const [error, setError] = useState("");
 
   const { setData, session } = useAppContext();
+
+  useEffect(() => {
+    const down = (e) => {
+      if (e.key === "Enter") {
+        handleSave();
+      }
+    };
+
+    window.addEventListener("keydown", down);
+    return () => window.removeEventListener("keydown", down);
+  }, [noteData]);
 
   const handleInput = (e) => {
     setError("");
