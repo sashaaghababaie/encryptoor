@@ -2,7 +2,7 @@ import { useAppContext } from "../context/Context";
 import { useState, useEffect } from "react";
 import { PasswordInput } from "./ui/Inputs";
 import { motion } from "motion/react";
-import { ERRORS } from "../../api/sanitize";
+import { ERRORS } from "../utils/error";
 
 /**
  *
@@ -164,7 +164,7 @@ export const ChangePassword = ({ onClose }) => {
 
       const res = await window.api.changePassword(
         inputs.current,
-        inputs.newPass
+        inputs.newPass,
       );
 
       if (res.success === true) {

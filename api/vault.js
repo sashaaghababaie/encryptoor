@@ -6,7 +6,7 @@ const isDev = require("electron-is-dev");
 const vaultEvents = require("./events");
 const { clipboard } = require("electron");
 const { aesDecrypt, aesEncrypt, scryptKey } = require("./crypto");
-
+const crypto = require("crypto");
 const DB_PATH = isDev ? "desktop" : "userData";
 const VAULT_DIR = path.join(app.getPath(DB_PATH), "encryptoor");
 const VAULT_PATH = path.join(VAULT_DIR, "vault.json");
@@ -189,7 +189,7 @@ function destroySession() {
 
   clearTimeout(session.timer);
 
-  lockVault();
+  wipeSession();
 
   vaultEvents.emit("vault:locked", { reason: "timeout" });
 }
@@ -442,6 +442,10 @@ function changePassword(oldPass, newPass) {
  *
  */
 function lockVault() {
+  destroySession();
+}
+
+function wipeSession() {
   if (session) {
     session.vaultKey.fill(0);
     session = null;
