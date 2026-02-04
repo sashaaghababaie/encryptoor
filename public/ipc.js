@@ -14,7 +14,7 @@ const {
   importVault,
   importVaultByFilePath,
   importVaultByBuffer,
-} = require("../src/api/vault");
+} = require("../api/vault");
 
 /**
  *

@@ -1,11 +1,11 @@
-const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const { app } = require("electron");
-const { ERRORS, sanitizeEntry } = require("../lib");
+const { ERRORS, sanitizeEntry } = require("./sanitize");
 const isDev = require("electron-is-dev");
-const vaultEvents = require("../api/events");
+const vaultEvents = require("./events");
 const { clipboard } = require("electron");
+const { aesDecrypt, aesEncrypt, scryptKey } = require("./crypto");
 
 const DB_PATH = isDev ? "desktop" : "userData";
 const VAULT_DIR = path.join(app.getPath(DB_PATH), "encryptoor");
@@ -14,15 +14,9 @@ const VAULT_PATH = path.join(VAULT_DIR, "vault.json");
 const MAGIC = "ENCRYPTOOR";
 const VERSION = 1;
 
-const SCRYPT_PARAMS = {
-  N: 2 ** 15,
-  r: 8,
-  p: 1,
-  maxmem: 64 * 1024 * 1024,
-};
-
-let session = null; // in-memory only
+let session = null;
 let clipboardTimer = null;
+let clipboardDecoyTimer = null;
 
 function restoreBackup(index = 1) {
   const backup = `${VAULT_PATH}.bak${index}`;
@@ -32,9 +26,7 @@ function restoreBackup(index = 1) {
 
     const vault = JSON.parse(data);
 
-    if (vault.magic !== MAGIC) {
-      throw new Error(ERRORS.INVALID_VAULT);
-    }
+    validateVault(vault);
 
     atomicWrite(VAULT_PATH, data);
 
@@ -57,9 +49,7 @@ function readVault() {
   try {
     const vault = JSON.parse(fs.readFileSync(VAULT_PATH, "utf8"));
 
-    if (vault.magic !== MAGIC) {
-      throw new Error(ERRORS.INVALID_VAULT);
-    }
+    validateVault(vault);
 
     return vault;
   } catch (err) {
@@ -87,48 +77,6 @@ function init() {
 
 /**
  *
- * @param {*} password
- * @param {*} salt
- */
-function scryptKey(password, salt) {
-  return crypto.scryptSync(password, salt, 32, SCRYPT_PARAMS);
-}
-
-/**
- *
- * @param {*} key
- * @param {*} plaintext
- * @returns
- */
-function aesEncrypt(key, plaintext) {
-  const iv = crypto.randomBytes(12);
-  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
-  const encrypted = Buffer.concat([cipher.update(plaintext), cipher.final()]);
-
-  return {
-    encrypted,
-    iv,
-    tag: cipher.getAuthTag(),
-  };
-}
-
-/**
- *
- * @param {*} key
- * @param {*} iv
- * @param {*} tag
- * @param {*} ciphertext
- * @returns
- */
-function aesDecrypt(key, iv, tag, ciphertext) {
-  const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
-  decipher.setAuthTag(tag);
-
-  return Buffer.concat([decipher.update(ciphertext), decipher.final()]);
-}
-
-/**
- *
  * @param {*} masterPassword
  * @param {*} data
  * @returns
@@ -143,7 +91,7 @@ function createVault(masterPassword, data = []) {
     const wrapped = aesEncrypt(kek, vaultKey);
     const encryptedData = aesEncrypt(
       vaultKey,
-      Buffer.from(JSON.stringify(data))
+      Buffer.from(JSON.stringify(data)),
     );
 
     const vault = {
@@ -197,7 +145,7 @@ function unlockVault(masterPassword) {
       kek,
       Buffer.from(vault.protected.vaultKeyIv, "base64"),
       Buffer.from(vault.protected.vaultKeyTag, "base64"),
-      Buffer.from(vault.protected.encryptedVaultKey, "base64")
+      Buffer.from(vault.protected.encryptedVaultKey, "base64"),
     );
 
     const data = JSON.parse(
@@ -205,8 +153,8 @@ function unlockVault(masterPassword) {
         vaultKey,
         Buffer.from(vault.data.iv, "base64"),
         Buffer.from(vault.data.authTag, "base64"),
-        Buffer.from(vault.data.encrypted, "base64")
-      ).toString("utf8")
+        Buffer.from(vault.data.encrypted, "base64"),
+      ).toString("utf8"),
     );
 
     createSession(vaultKey, data);
@@ -262,7 +210,7 @@ function removeItem(sessionId, itemId) {
 
     const encrypted = aesEncrypt(
       session.vaultKey,
-      Buffer.from(JSON.stringify(session.data))
+      Buffer.from(JSON.stringify(session.data)),
     );
 
     const vault = readVault();
@@ -305,7 +253,7 @@ function exportVault(sessionId, useOldPass, currentPass, newPass = "") {
         kek,
         Buffer.from(vault.protected.vaultKeyIv, "base64"),
         Buffer.from(vault.protected.vaultKeyTag, "base64"),
-        Buffer.from(vault.protected.encryptedVaultKey, "base64")
+        Buffer.from(vault.protected.encryptedVaultKey, "base64"),
       );
 
       // data = JSON.parse(
@@ -335,7 +283,7 @@ function exportVault(sessionId, useOldPass, currentPass, newPass = "") {
     if (useOldPass === true && newPass.length === 0) {
       const encrypted = aesEncrypt(
         session.vaultKey,
-        Buffer.from(JSON.stringify(session.data))
+        Buffer.from(JSON.stringify(session.data)),
       );
 
       vault.data = {
@@ -362,7 +310,7 @@ function exportVault(sessionId, useOldPass, currentPass, newPass = "") {
 
       const encryptedData = aesEncrypt(
         vaultKey,
-        Buffer.from(JSON.stringify(session.data))
+        Buffer.from(JSON.stringify(session.data)),
       );
 
       const vault = {
@@ -430,7 +378,7 @@ function upsertItem(sessionId, newItem) {
 
     const encrypted = aesEncrypt(
       session.vaultKey,
-      Buffer.from(JSON.stringify(newData))
+      Buffer.from(JSON.stringify(newData)),
     );
 
     const vault = readVault();
@@ -468,7 +416,7 @@ function changePassword(oldPass, newPass) {
       oldKek,
       Buffer.from(vault.protected.vaultKeyIv, "base64"),
       Buffer.from(vault.protected.vaultKeyTag, "base64"),
-      Buffer.from(vault.protected.encryptedVaultKey, "base64")
+      Buffer.from(vault.protected.encryptedVaultKey, "base64"),
     );
 
     const newSalt = crypto.randomBytes(16);
@@ -565,43 +513,6 @@ function writeVault(file, data) {
 
 /**
  *
- * @param {*} file
- * @param {*} max
- */
-function rotateBackups(file, max = 3) {
-  for (let i = max - 1; i >= 1; i--) {
-    const src = `${file}.bak${i}`;
-    const dest = `${file}.bak${i + 1}`;
-
-    if (fs.existsSync(src)) {
-      fs.renameSync(src, dest);
-    }
-  }
-}
-
-/**
- *
- * @param {*} file
- */
-function createBackup(file) {
-  if (fs.existsSync(file)) {
-    fs.copyFileSync(file, `${file}.bak1`);
-  }
-}
-
-/**
- *
- * @param {*} file
- * @param {*} data
- */
-function writeVault(file, data) {
-  rotateBackups(file);
-  createBackup(file);
-  atomicWrite(file, data);
-}
-
-/**
- *
  * @param {*} vaultKey
  * @param {*} data
  */
@@ -635,9 +546,13 @@ function requestCopyPassword(itemId) {
 
     clipboard.writeText(wipedPassword);
 
-    setTimeout(() => clipboard.writeText(item.password), 200);
-
+    if (clipboardDecoyTimer) clearTimeout(clipboardDecoyTimer);
     if (clipboardTimer) clearTimeout(clipboardTimer);
+
+    clipboardDecoyTimer = setTimeout(() => {
+      clipboard.writeText(item.password);
+      clipboardDecoyTimer = null;
+    }, 200);
 
     clipboardTimer = setTimeout(() => {
       if (clipboard.readText() === item.password) {
@@ -678,7 +593,7 @@ function importVault(importedVault, pass) {
       kek,
       Buffer.from(importedVault.protected.vaultKeyIv, "base64"),
       Buffer.from(importedVault.protected.vaultKeyTag, "base64"),
-      Buffer.from(importedVault.protected.encryptedVaultKey, "base64")
+      Buffer.from(importedVault.protected.encryptedVaultKey, "base64"),
     );
 
     const imported = JSON.parse(
@@ -686,8 +601,8 @@ function importVault(importedVault, pass) {
         vaultKey,
         Buffer.from(importedVault.data.iv, "base64"),
         Buffer.from(importedVault.data.authTag, "base64"),
-        Buffer.from(importedVault.data.encrypted, "base64")
-      ).toString("utf8")
+        Buffer.from(importedVault.data.encrypted, "base64"),
+      ).toString("utf8"),
     );
 
     const status = {
@@ -732,7 +647,7 @@ function importVault(importedVault, pass) {
 
     const encrypted = aesEncrypt(
       session.vaultKey,
-      Buffer.from(JSON.stringify(copy))
+      Buffer.from(JSON.stringify(copy)),
     );
 
     const vault = readVault();
@@ -758,6 +673,13 @@ function importVault(importedVault, pass) {
   }
 }
 
+/**
+ *
+ * @param {*} sessionId
+ * @param {*} pass
+ * @param {*} buffer
+ * @returns
+ */
 function importVaultByBuffer(sessionId, pass, buffer) {
   try {
     requireSession(sessionId);
@@ -772,18 +694,7 @@ function importVaultByBuffer(sessionId, pass, buffer) {
 
     const importedVault = JSON.parse(buffer.toString("utf-8"));
 
-    if (
-      !importedVault?.magic ||
-      !importedVault?.header?.kdf ||
-      !importedVault?.protected ||
-      !importedVault?.data
-    ) {
-      throw new Error(ERRORS.INVALID_VAULT);
-    }
-
-    if (importedVault.magic !== MAGIC) {
-      throw new Error(ERRORS.INVALID_VAULT);
-    }
+    validateVault(importedVault);
 
     const { status, data } = importVault(importedVault, pass);
 
@@ -824,18 +735,7 @@ function importVaultByFilePath(sessionId, pass, filePath) {
 
     const importedVault = JSON.parse(fs.readFileSync(filePath, "utf8"));
 
-    if (
-      !importedVault?.magic ||
-      !importedVault?.header?.kdf ||
-      !importedVault?.protected ||
-      !importedVault?.data
-    ) {
-      throw new Error(ERRORS.INVALID_VAULT);
-    }
-
-    if (importedVault.magic !== MAGIC) {
-      throw new Error(ERRORS.INVALID_VAULT);
-    }
+    validateVault(importedVault);
 
     const { status, data } = importVault(importedVault, pass);
 
@@ -858,6 +758,29 @@ function requestShowPassword(itemId) {
   }
 
   return item.password;
+}
+
+/**
+ *
+ * @param {*} vault
+ */
+function validateVault(vault) {
+  if (!vault) {
+    throw new Error(ERRORS.INVALID_VAULT);
+  }
+
+  if (
+    !vault?.magic ||
+    !vault?.header?.kdf ||
+    !vault?.protected ||
+    !vault?.data
+  ) {
+    throw new Error(ERRORS.INVALID_VAULT);
+  }
+
+  if (vault.magic !== MAGIC) {
+    throw new Error(ERRORS.INVALID_VAULT);
+  }
 }
 
 module.exports = {

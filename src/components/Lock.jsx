@@ -2,7 +2,7 @@ import { useAppContext } from "../context/Context";
 import { useState, useEffect } from "react";
 import { PasswordInput } from "./ui/Inputs";
 import { motion } from "motion/react";
-import { ERRORS } from "../lib";
+import { ERRORS } from "../../api/sanitize";
 
 /**
  *

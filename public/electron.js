@@ -2,7 +2,7 @@
 const path = require("path");
 const { app, BrowserWindow } = require("electron");
 const isDev = require("electron-is-dev");
-const vaultEvents = require("../src/api/events");
+const vaultEvents = require("../api/events");
 const { handleIpcs } = require("../public/ipc");
 
 function createWindow() {
