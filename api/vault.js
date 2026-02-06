@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const { app } = require("electron");
-const { ERRORS, sanitizeEntry } = require("./sanitize");
+const { sanitizeEntry } = require("./sanitize");
 const isDev = require("electron-is-dev");
 const vaultEvents = require("./events");
 const { clipboard } = require("electron");
@@ -10,9 +10,13 @@ const crypto = require("crypto");
 const DB_PATH = isDev ? "desktop" : "userData";
 const VAULT_DIR = path.join(app.getPath(DB_PATH), "encryptoor");
 const VAULT_PATH = path.join(VAULT_DIR, "vault.json");
+const META_PATH = path.join(VAULT_DIR, "vault.meta.json");
+const { ERRORS } = require("../src/utils/error");
 
 const MAGIC = "ENCRYPTOOR";
 const VERSION = 1;
+const MAX_ATTEMPTS = 3;
+const COOLDOWN = 10_000;
 
 let session = null;
 let clipboardTimer = null;
@@ -119,9 +123,15 @@ function createVault(masterPassword, data = []) {
       },
     };
 
+    const meta = {
+      failedUnlocks: 0,
+      lastFailureAt: 0,
+    };
+
     fs.mkdirSync(VAULT_DIR, { recursive: true, mode: 0o700 });
 
     atomicWrite(VAULT_PATH, JSON.stringify(vault, null, 2));
+    atomicWrite(META_PATH, JSON.stringify(meta, null, 2));
 
     return { success: true };
   } catch (err) {
@@ -129,6 +139,93 @@ function createVault(masterPassword, data = []) {
   }
 }
 
+function validateMeta() {
+  try {
+    const meta = JSON.parse(fs.readFileSync(META_PATH, "utf8"));
+
+    if (
+      !meta.hasOwnProperty("failedUnlocks") ||
+      !meta.hasOwnProperty("lockUntil")
+    ) {
+      throw new Error("INAVLID_META");
+    }
+
+    if (
+      typeof meta.failedUnlocks !== "number" ||
+      typeof meta.lockUntil !== "number"
+    ) {
+      throw new Error("INAVLID_META");
+    }
+
+    return meta;
+  } catch (err) {
+    // likely meta tampered, => penlaty
+    const meta = {
+      failedUnlocks: MAX_ATTEMPTS,
+      lockUntil: Date.now() + COOLDOWN,
+    };
+
+    atomicWrite(META_PATH, JSON.stringify(meta, null, 2), "meta");
+
+    return meta;
+  }
+}
+
+function checkPasswordCooldown(meta) {
+  const current = Date.now();
+
+  if (meta.lockUntil > current) {
+    const remainingSeconds = Math.ceil((meta.lockUntil - current) / 1000);
+
+    let timeAppendix = "";
+
+    if (remainingSeconds <= 1) {
+      timeAppendix = "second";
+    } else if (remainingSeconds < 60) {
+      timeAppendix = "seconds";
+    } else {
+      timeAppendix = "minutes";
+    }
+
+    let remainingForText =
+      timeAppendix === "minutes"
+        ? Math.ceil(remainingSeconds / 60)
+        : remainingSeconds;
+
+    throw new Error(
+      `Please wait ${remainingForText} ${timeAppendix} then retry`,
+    );
+  }
+
+  if (meta.lockUntil < current && meta.failedUnlocks >= MAX_ATTEMPTS) {
+    meta.failedUnlocks = 0;
+    meta.lockUntil = 0;
+
+    atomicWrite(META_PATH, JSON.stringify(meta, null, 2), "meta");
+  }
+}
+
+function handleWrongPassword(meta) {
+  meta.failedUnlocks++;
+
+  if (meta.failedUnlocks >= MAX_ATTEMPTS) {
+    meta.lockUntil = Date.now() + COOLDOWN; // 15min
+    destroySession("Max attempts");
+  }
+
+  atomicWrite(META_PATH, JSON.stringify(meta, null, 2), "meta");
+
+  throw new Error(
+    `${ERRORS.WRONG_PASSWORD} ${meta.failedUnlocks >= MAX_ATTEMPTS ? "Please wait 15 minutes." : `Remaining attempts: ${MAX_ATTEMPTS - meta.failedUnlocks}`}`,
+  );
+}
+
+function resetPasswordCooldown(meta) {
+  meta.failedUnlocks = 0;
+  meta.lockUntil = 0;
+
+  atomicWrite(META_PATH, JSON.stringify(meta, null, 2), "meta");
+}
 /**
  *
  * @param {*} masterPassword
@@ -136,17 +233,37 @@ function createVault(masterPassword, data = []) {
  */
 function unlockVault(masterPassword) {
   try {
+    const meta = validateMeta();
+
+    checkPasswordCooldown(meta);
+
     const vault = readVault();
 
     const salt = Buffer.from(vault.header.kdf.salt, "base64");
     const kek = scryptKey(masterPassword, salt);
 
-    const vaultKey = aesDecrypt(
-      kek,
-      Buffer.from(vault.protected.vaultKeyIv, "base64"),
-      Buffer.from(vault.protected.vaultKeyTag, "base64"),
-      Buffer.from(vault.protected.encryptedVaultKey, "base64"),
-    );
+    let vaultKey;
+
+    try {
+      vaultKey = aesDecrypt(
+        kek,
+        Buffer.from(vault.protected.vaultKeyIv, "base64"),
+        Buffer.from(vault.protected.vaultKeyTag, "base64"),
+        Buffer.from(vault.protected.encryptedVaultKey, "base64"),
+      );
+    } catch (err) {
+      if (
+        err.message.includes("authenticate") ||
+        err.message.includes("auth")
+      ) {
+        handleWrongPassword(meta);
+      }
+
+      throw err;
+    }
+
+    // reset meta after correct password
+    resetPasswordCooldown(meta);
 
     const data = JSON.parse(
       aesDecrypt(
@@ -157,6 +274,10 @@ function unlockVault(masterPassword) {
       ).toString("utf8"),
     );
 
+    // vault.security.failedUnlocks = 0;
+    // vault.security.lockoutUntil = 0;
+
+    // writeVault(VAULT_PATH,vault)
     createSession(vaultKey, data);
 
     return { success: true, sessionId: session.id, data: secureData(data) };
@@ -239,11 +360,11 @@ function exportVault(sessionId, useOldPass, currentPass, newPass = "") {
       throw new Error("You need to type the vault pass.");
     }
 
+    const meta = validateMeta();
+
+    checkPasswordCooldown(meta);
+
     const vault = readVault();
-
-    console.log(currentPass);
-
-    let data;
 
     try {
       const salt = Buffer.from(vault.header.kdf.salt, "base64");
@@ -255,22 +376,18 @@ function exportVault(sessionId, useOldPass, currentPass, newPass = "") {
         Buffer.from(vault.protected.vaultKeyTag, "base64"),
         Buffer.from(vault.protected.encryptedVaultKey, "base64"),
       );
-
-      // data = JSON.parse(
-      //   aesDecrypt(
-      //     vaultKey,
-      //     Buffer.from(vault.data.iv, "base64"),
-      //     Buffer.from(vault.data.authTag, "base64"),
-      //     Buffer.from(vault.data.encrypted, "base64")
-      //   ).toString("utf8")
-      // );
     } catch (err) {
-      if (err.message === "Unsupported state or unable to authenticate data") {
-        throw new Error(ERRORS.WRONG_PASSWORD);
+      if (
+        err.message.includes("authenticate") ||
+        err.message.includes("auth")
+      ) {
+        handleWrongPassword(meta);
       }
 
       throw err;
     }
+
+    resetPasswordCooldown(meta);
 
     const current = new Date();
     const dateTime = current.toISOString().slice(0, -5).split("T");
@@ -407,17 +524,36 @@ function upsertItem(sessionId, newItem) {
  */
 function changePassword(oldPass, newPass) {
   try {
+    const meta = validateMeta();
+
+    checkPasswordCooldown(meta);
+
     const vault = readVault();
 
     const oldSalt = Buffer.from(vault.header.kdf.salt, "base64");
     const oldKek = scryptKey(oldPass, oldSalt);
 
-    const vaultKey = aesDecrypt(
-      oldKek,
-      Buffer.from(vault.protected.vaultKeyIv, "base64"),
-      Buffer.from(vault.protected.vaultKeyTag, "base64"),
-      Buffer.from(vault.protected.encryptedVaultKey, "base64"),
-    );
+    let vaultKey;
+
+    try {
+      vaultKey = aesDecrypt(
+        oldKek,
+        Buffer.from(vault.protected.vaultKeyIv, "base64"),
+        Buffer.from(vault.protected.vaultKeyTag, "base64"),
+        Buffer.from(vault.protected.encryptedVaultKey, "base64"),
+      );
+    } catch (err) {
+      if (
+        err.message.includes("authenticate") ||
+        err.message.includes("auth")
+      ) {
+        handleWrongPassword(meta);
+      }
+
+      throw err;
+    }
+
+    resetPasswordCooldown(meta);
 
     const newSalt = crypto.randomBytes(16);
     const newKek = scryptKey(newPass, newSalt);
@@ -434,7 +570,7 @@ function changePassword(oldPass, newPass) {
 
     return { success: true };
   } catch (err) {
-    return { success: false, erro: err.message };
+    return { success: false, error: err.message };
   }
 }
 
@@ -454,12 +590,12 @@ function wipeSession() {
 
 /**
  * Atomically write data to a file.
- * @param {path} filePath
+ * @param { path } filePath
  * @param {{[index:string]: string}} data
  */
-function atomicWrite(filePath, data) {
+function atomicWrite(filePath, data, slug = "vault") {
   const dir = path.dirname(filePath);
-  const tempPath = path.join(dir, `.tmp-${Date.now()}`);
+  const tempPath = path.join(dir, `.tmp-${slug}-${Date.now()}`);
 
   try {
     fs.writeFileSync(tempPath, data, { mode: 0o600 });

@@ -42,9 +42,7 @@ export const Lock = ({ setState, state }) => {
         throw new Error(res.error);
       }
     } catch (err) {
-      if (err.message === "Unsupported state or unable to authenticate data") {
-        setError("Wrong Password.");
-      } else if (
+      if (
         err.message === ERRORS.NOT_INITIALIZED ||
         err.message === ERRORS.INVALID_VAULT
       ) {
@@ -174,6 +172,7 @@ export const ChangePassword = ({ onClose }) => {
         throw new Error(res.error);
       }
     } catch (err) {
+      console.log(err);
       setError(err.message);
 
       setButtonAnim({
