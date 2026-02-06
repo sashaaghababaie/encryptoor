@@ -47,16 +47,16 @@ function createWindow() {
     return { action: "deny" };
   });
 
-  app.on("browser-window-focus", () => {
-    if (!win || win.isDestroyed()) return;
+  // app.on("browser-window-focus", () => {
+  //   if (!win || win.isDestroyed()) return;
 
-    win.webContents.send("ui:focus");
-  });
+  //   win.webContents.send("ui:focus");
+  // });
 
-  powerMonitor.on("resume", () => {
-    if (!win || win.isDestroyed()) return;
-    win.webContents.send("ui:focus");
-  });
+  // powerMonitor.on("resume", () => {
+  //   if (!win || win.isDestroyed()) return;
+  //   win.webContents.send("ui:focus");
+  // });
 
   win.webContents.on("will-navigate", (e) => {
     e.preventDefault();

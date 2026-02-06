@@ -88,6 +88,7 @@ export const Lock = ({ setState, state }) => {
           </div>
 
           <PasswordInput
+            autoFocus
             label="Password"
             name="password"
             value={password}
