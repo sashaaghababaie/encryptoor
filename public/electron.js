@@ -89,15 +89,15 @@ app.on("window-all-closed", () => {
 });
 
 process.on("uncaughtException", (err) => {
-  lockVault();
+  lockVault("uncaughtException");
   app.exit(1);
 });
 
-app.on("before-quit", () => lockVault());
+app.on("before-quit", () => lockVault("quit"));
 
-app.on("will-quit", () => lockVault());
+app.on("will-quit", () => lockVault("quit"));
 
-app.on("browser-window-minimize", () => lockVault());
+app.on("browser-window-minimize", () => lockVault("minimize"));
 // contents.on("will-navigate", (e) => {
 //   e.preventDefault();
 // });
@@ -116,7 +116,7 @@ app.on("browser-window-minimize", () => lockVault());
 if (!isDev) {
   app.on("web-contents-created", (_, contents) => {
     contents.on("devtools-opened", () => {
-      lockVault();
+      lockVault("devtools not allowed");
       app.quit();
     });
   });
@@ -128,12 +128,12 @@ if (!isDev) {
 app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
-    lockVault();
+    lockVault("on start");
   }
 });
 
-powerMonitor.on("suspend", () => lockVault());
+powerMonitor.on("suspend", () => lockVault("suspend"));
 
-powerMonitor.on("lock-screen", () => lockVault());
+powerMonitor.on("lock-screen", () => lockVault("lock-screen"));
 
 handleIpcs();

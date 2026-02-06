@@ -177,21 +177,21 @@ function requireSession(sessionId) {
   clearTimeout(session.timer);
 
   session.timer = setTimeout(() => {
-    destroySession(sessionId);
+    destroySession("timeout");
   }, session.timeout);
 }
 
 /**
  * Safely clear the session, zeroing the memory and lock the UI.
  */
-function destroySession() {
+function destroySession(reason) {
   if (!session) return;
 
   clearTimeout(session.timer);
 
   wipeSession();
 
-  vaultEvents.emit("vault:locked", { reason: "timeout" });
+  vaultEvents.emit("vault:locked", { reason });
 }
 
 /**
@@ -441,8 +441,8 @@ function changePassword(oldPass, newPass) {
 /**
  *
  */
-function lockVault() {
-  destroySession();
+function lockVault(reason) {
+  destroySession(reason);
 }
 
 function wipeSession() {
@@ -533,7 +533,7 @@ function createSession(vaultKey, data) {
   };
 
   session.timer = setTimeout(() => {
-    destroySession(sessionId);
+    destroySession("timeout");
   }, session.timeout);
 }
 
