@@ -1,9 +1,10 @@
 // ./public/electron.js
 const path = require("path");
-const { app, BrowserWindow } = require("electron");
+const { app, BrowserWindow, powerMonitor, session } = require("electron");
 const isDev = require("electron-is-dev");
 const vaultEvents = require("../api/events");
 const { handleIpcs } = require("../public/ipc");
+const { lockVault } = require("../api/vault");
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -29,7 +30,7 @@ function createWindow() {
   win.loadURL(
     isDev
       ? "http://localhost:3000"
-      : `file://${path.join(__dirname, "../build/index.html")}`
+      : `file://${path.join(__dirname, "../build/index.html")}`,
   );
 
   if (isDev) {
@@ -42,6 +43,25 @@ function createWindow() {
     win.webContents.send("vault:locked", reason);
   });
 
+  win.webContents.setWindowOpenHandler(() => {
+    return { action: "deny" };
+  });
+
+  app.on("browser-window-focus", () => {
+    if (!win || win.isDestroyed()) return;
+
+    win.webContents.send("ui:focus");
+  });
+
+  powerMonitor.on("resume", () => {
+    if (!win || win.isDestroyed()) return;
+    win.webContents.send("ui:focus");
+  });
+
+  win.webContents.on("will-navigate", (e) => {
+    e.preventDefault();
+  });
+
   // win.setTitle("Encryptoor");
 }
 
@@ -50,22 +70,70 @@ function createWindow() {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  createWindow();
+
+  const forbidden = ["--inspect", "--inspect-brk", "--remote-debugging-port"];
+  if (process.argv.some((arg) => forbidden.includes(arg))) {
+    app.quit();
+  }
+});
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bars to stay active until the user quits
 // explicitly with Cmd + Q.
-
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
   }
 });
 
+process.on("uncaughtException", (err) => {
+  lockVault();
+  app.exit(1);
+});
+
+app.on("before-quit", () => lockVault());
+
+app.on("will-quit", () => lockVault());
+
+app.on("browser-window-minimize", () => lockVault());
+// contents.on("will-navigate", (e) => {
+//   e.preventDefault();
+// });
+
+["SIGINT", "SIGTERM"].forEach((sig) => {
+  process.on(sig, () => {
+    try {
+      lockVault("signal");
+      app.quit();
+    } catch {
+      app.exit(1); // fallback
+    }
+  });
+});
+
+if (!isDev) {
+  app.on("web-contents-created", (_, contents) => {
+    contents.on("devtools-opened", () => {
+      lockVault();
+      app.quit();
+    });
+  });
+}
+
+// not very user friendly
+// app.on("browser-window-blur", () => lockVault());
+
 app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
+    lockVault();
   }
 });
+
+powerMonitor.on("suspend", () => lockVault());
+
+powerMonitor.on("lock-screen", () => lockVault());
 
 handleIpcs();
