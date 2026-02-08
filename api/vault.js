@@ -1,27 +1,36 @@
 const fs = require("fs");
 const path = require("path");
-const { app } = require("electron");
-const { sanitizeEntry } = require("./sanitize");
-const isDev = require("electron-is-dev");
-const vaultEvents = require("./events");
-const { clipboard } = require("electron");
-const { aesDecrypt, aesEncrypt, scryptKey } = require("./crypto");
 const crypto = require("crypto");
+const { app, clipboard } = require("electron");
+const isDev = require("electron-is-dev");
+const { sanitizeEntry } = require("./sanitize");
+const vaultEvents = require("./events");
+const { ERRORS } = require("../src/utils/error");
+const {
+  aesDecrypt,
+  aesEncrypt,
+  scryptKey,
+  SCRYPT_PARAMS,
+} = require("./crypto");
+
 const DB_PATH = isDev ? "desktop" : "userData";
 const VAULT_DIR = path.join(app.getPath(DB_PATH), "encryptoor");
 const VAULT_PATH = path.join(VAULT_DIR, "vault.json");
 const META_PATH = path.join(VAULT_DIR, "vault.meta.json");
-const { ERRORS } = require("../src/utils/error");
 
 const MAGIC = "ENCRYPTOOR";
-const VERSION = 1;
 const MAX_ATTEMPTS = 3;
 const COOLDOWN = 10_000;
+const CURRENT_SCHEMA_VERSION = 1;
 
 let session = null;
 let clipboardTimer = null;
 let clipboardDecoyTimer = null;
 
+/**
+ * Restore Backup
+ * @param {*} index
+ */
 function restoreBackup(index = 1) {
   const backup = `${VAULT_PATH}.bak${index}`;
 
@@ -67,6 +76,7 @@ function readVault() {
     throw err;
   }
 }
+
 /**
  * Check if any vault exists
  */
@@ -93,6 +103,7 @@ function createVault(masterPassword, data = []) {
     const vaultKey = crypto.randomBytes(32);
 
     const wrapped = aesEncrypt(kek, vaultKey);
+
     const encryptedData = aesEncrypt(
       vaultKey,
       Buffer.from(JSON.stringify(data)),
@@ -100,7 +111,8 @@ function createVault(masterPassword, data = []) {
 
     const vault = {
       magic: MAGIC,
-      version: VERSION,
+      schemaVersion: CURRENT_SCHEMA_VERSION,
+      appVersion: app.getVersion(),
       header: {
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -125,7 +137,7 @@ function createVault(masterPassword, data = []) {
 
     const meta = {
       failedUnlocks: 0,
-      lastFailureAt: 0,
+      lockUntil: 0,
     };
 
     fs.mkdirSync(VAULT_DIR, { recursive: true, mode: 0o700 });
@@ -139,6 +151,9 @@ function createVault(masterPassword, data = []) {
   }
 }
 
+/**
+ *
+ */
 function validateMeta() {
   try {
     const meta = JSON.parse(fs.readFileSync(META_PATH, "utf8"));
@@ -171,6 +186,10 @@ function validateMeta() {
   }
 }
 
+/**
+ *
+ * @param {*} meta
+ */
 function checkPasswordCooldown(meta) {
   const current = Date.now();
 
@@ -205,6 +224,10 @@ function checkPasswordCooldown(meta) {
   }
 }
 
+/**
+ *
+ * @param {*} meta
+ */
 function handleWrongPassword(meta) {
   meta.failedUnlocks++;
 
@@ -220,6 +243,10 @@ function handleWrongPassword(meta) {
   );
 }
 
+/**
+ *
+ * @param {*} meta
+ */
 function resetPasswordCooldown(meta) {
   meta.failedUnlocks = 0;
   meta.lockUntil = 0;
@@ -274,10 +301,6 @@ function unlockVault(masterPassword) {
       ).toString("utf8"),
     );
 
-    // vault.security.failedUnlocks = 0;
-    // vault.security.lockoutUntil = 0;
-
-    // writeVault(VAULT_PATH,vault)
     createSession(vaultKey, data);
 
     return { success: true, sessionId: session.id, data: secureData(data) };
@@ -575,17 +598,37 @@ function changePassword(oldPass, newPass) {
 }
 
 /**
- *
+ * Locking vault by destroying session
  */
 function lockVault(reason) {
   destroySession(reason);
 }
 
+/**
+ * Wipe out the memory
+ */
 function wipeSession() {
-  if (session) {
+  if (!session) return;
+
+  // Zero out sensitive buffers
+  if (session.vaultKey && Buffer.isBuffer(session.vaultKey)) {
     session.vaultKey.fill(0);
-    session = null;
   }
+
+  // Clear data array
+  if (Array.isArray(session.data)) {
+    session.data.length = 0;
+  }
+
+  // Clear all properties
+  session.id = null;
+  session.vaultKey = null;
+  session.data = null;
+  session.lastActivity = null;
+  session.timeout = null;
+  session.timer = null;
+
+  session = null;
 }
 
 /**
@@ -620,13 +663,22 @@ function atomicWrite(filePath, data, slug = "vault") {
  * @param {*} max
  */
 function rotateBackups(file, max = 3) {
-  for (let i = max - 1; i >= 1; i--) {
-    const src = `${file}.bak${i}`;
-    const dest = `${file}.bak${i + 1}`;
-
-    if (fs.existsSync(src)) {
-      fs.renameSync(src, dest);
+  try {
+    const oldest = `${file}.bak${max}`;
+    if (fs.existsSync(oldest)) {
+      fs.unlinkSync(oldest);
     }
+
+    for (let i = max - 1; i >= 1; i--) {
+      const src = `${file}.bak${i}`;
+      const dest = `${file}.bak${i + 1}`;
+
+      if (fs.existsSync(src)) {
+        fs.renameSync(src, dest);
+      }
+    }
+  } catch (_) {
+    //
   }
 }
 
@@ -676,31 +728,46 @@ function createSession(vaultKey, data) {
 /**
  *
  */
-function requestCopyPassword(itemId) {
-  const item = session.data.find((item) => item.id === itemId);
+function requestCopyPassword(sessionId, itemId) {
+  try {
+    requireSession(sessionId);
 
-  if (!item.password) {
+    const item = session.data.find((item) => item.id === itemId);
+
+    if (!item) return;
+
+    if (!item.password) {
+      return;
+    } else {
+      const wipedPassword = "••••••••••";
+
+      clipboard.writeText(wipedPassword);
+
+      if (clipboardDecoyTimer) clearTimeout(clipboardDecoyTimer);
+      if (clipboardTimer) clearTimeout(clipboardTimer);
+
+      clipboardDecoyTimer = setTimeout(() => {
+        clipboard.writeText(item.password);
+        clipboardDecoyTimer = null;
+      }, 200);
+
+      clipboardTimer = setTimeout(() => {
+        if (clipboard.readText() === item.password) {
+          clipboard.clear();
+        }
+
+        // Force
+        setTimeout(() => {
+          if (clipboard.readText() === item.password) {
+            clipboard.writeText("");
+          }
+        }, 100);
+
+        clipboardTimer = null;
+      }, 30_000);
+    }
+  } catch (err) {
     return;
-  } else {
-    const wipedPassword = "••••••••••";
-
-    clipboard.writeText(wipedPassword);
-
-    if (clipboardDecoyTimer) clearTimeout(clipboardDecoyTimer);
-    if (clipboardTimer) clearTimeout(clipboardTimer);
-
-    clipboardDecoyTimer = setTimeout(() => {
-      clipboard.writeText(item.password);
-      clipboardDecoyTimer = null;
-    }, 200);
-
-    clipboardTimer = setTimeout(() => {
-      if (clipboard.readText() === item.password) {
-        clipboard.clear();
-      }
-
-      clipboardTimer = null;
-    }, 30_000);
   }
 }
 
@@ -890,14 +957,18 @@ function importVaultByFilePath(sessionId, pass, filePath) {
  * @param {*} itemId
  * @returns
  */
-function requestShowPassword(itemId) {
-  const item = session.data.find((item) => item.id === itemId);
+function requestShowPassword(sessionId, itemId) {
+  try {
+    requireSession(sessionId);
 
-  if (!item.password) {
+    const item = session.data.find((item) => item.id === itemId);
+    if (!item) return "";
+
+    if (!item.password) return "";
+    return item.password;
+  } catch (err) {
     return "";
   }
-
-  return item.password;
 }
 
 /**
@@ -910,6 +981,8 @@ function validateVault(vault) {
   }
 
   if (
+    !vault?.appVersion ||
+    !vault?.schemaVersion ||
     !vault?.magic ||
     !vault?.header?.kdf ||
     !vault?.protected ||
@@ -921,6 +994,28 @@ function validateVault(vault) {
   if (vault.magic !== MAGIC) {
     throw new Error(ERRORS.INVALID_VAULT);
   }
+
+  if (!vault.header.kdf.salt || !vault.header.kdf.name) {
+    throw new Error(ERRORS.INVALID_VAULT);
+  }
+
+  if (
+    !vault.protected.encryptedVaultKey ||
+    !vault.protected.vaultKeyIv ||
+    !vault.protected.vaultKeyTag
+  ) {
+    throw new Error(ERRORS.INVALID_VAULT);
+  }
+
+  if (!vault.data.encrypted || !vault.data.iv || !vault.data.authTag) {
+    throw new Error(ERRORS.INVALID_VAULT);
+  }
+
+  if (vault.schemaVersion > CURRENT_SCHEMA_VERSION) {
+    throw new Error("Vault schema incompatible. Please update the app.");
+  }
+
+  //semver
 }
 
 module.exports = {

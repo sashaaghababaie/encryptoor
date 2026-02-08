@@ -38,7 +38,7 @@ contextBridge.exposeInMainWorld("api", {
       "vault:importByBuffer",
       sessionId,
       pass,
-      nodeBuffer
+      nodeBuffer,
     );
   },
 
@@ -48,8 +48,16 @@ contextBridge.exposeInMainWorld("api", {
       sessionId,
       useOldPass,
       currentPass,
-      newPass
+      newPass,
     ),
+
+  downloadUpdate: (meta) => {
+    ipcRenderer.invoke("update:download", meta);
+  },
+
+  onUpdateProgress: (cb) => {
+    ipcRenderer.on("update:progress", (_, data) => cb(data));
+  },
 });
 
 // contextBridge.exposeInMainWorld("api", {

@@ -8,8 +8,7 @@ export const ContextProvider = ({ children }) => {
   const [session, setSession] = useState(null);
 
   useEffect(() => {
-    window.api.onLocked((r) => {
-      console.log(r);
+    window.api.onLocked((_) => {
       setSession(null);
       setData([]);
     });

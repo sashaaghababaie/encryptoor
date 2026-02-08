@@ -1,4 +1,5 @@
-const { ipcMain } = require("electron");
+const { ipcMain, BrowserWindow } = require("electron");
+const { downloadUpdateWithProgress } = require("../api/update");
 const {
   init,
   exportVault,
@@ -11,13 +12,12 @@ const {
   removeItem,
   requestCopyPassword,
   requestShowPassword,
-  importVault,
   importVaultByFilePath,
   importVaultByBuffer,
 } = require("../api/vault");
 
 /**
- *
+ * IPC Handlers
  */
 function handleIpcs() {
   ipcMain.handle("vault:init", (_) => {
@@ -36,7 +36,7 @@ function handleIpcs() {
     "vault:export",
     (_, sessionId, useOldPass, oldPass, newPass) => {
       return exportVault(sessionId, useOldPass, oldPass, newPass);
-    }
+    },
   );
 
   ipcMain.handle("vault:importByPath", (_, sessionId, pass, filePath) => {
@@ -55,12 +55,12 @@ function handleIpcs() {
     return removeItem(sessionId, itemId);
   });
 
-  ipcMain.handle("vault:copyPassword", (_, itemId) => {
-    return requestCopyPassword(itemId);
+  ipcMain.handle("vault:copyPassword", (_, sessionId, itemId) => {
+    return requestCopyPassword(sessionId, itemId);
   });
 
-  ipcMain.handle("vault:showPassword", (_, itemId) => {
-    return requestShowPassword(itemId);
+  ipcMain.handle("vault:showPassword", (_, sessionId, itemId) => {
+    return requestShowPassword(sessionId, itemId);
   });
 
   ipcMain.handle("vault:session", (_, sessionId) => {
@@ -73,6 +73,11 @@ function handleIpcs() {
 
   ipcMain.handle("vault:changePassword", (_, oldPass, newPass) => {
     return changePassword(oldPass, newPass);
+  });
+
+  ipcMain.handle("update:download", async (e, meta) => {
+    const win = BrowserWindow.fromWebContents(e.sender);
+    return await downloadUpdateWithProgress(win, meta);
   });
 }
 

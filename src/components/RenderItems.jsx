@@ -231,6 +231,8 @@ const LoginView = ({
   const [hoverEdit, setHoverEdit] = useState(false);
   const [realPass, setRealPass] = useState("");
 
+  const { session } = useAppContext();
+
   useEffect(() => {
     setRealPass(false);
   }, [isOpen]);
@@ -279,7 +281,7 @@ const LoginView = ({
   }, [startDelete]);
 
   const handleShowPassword = async () => {
-    const pass = await window.api.show(item.id);
+    const pass = await window.api.show(session, item.id);
     setRealPass(pass);
     setTimeout(() => setRealPass(""), 5000);
   };

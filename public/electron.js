@@ -24,8 +24,15 @@ function createWindow() {
       nodeIntegration: false,
       sandbox: true,
       enableRemoteModule: false,
+      webSecurity: true,
+      experimentalFeatures: false,
+      disableBlinkFeatures: "Auxclick",
+      navigateOnDragDrop: false,
     },
   });
+
+  // app.setName("Encryptoor");
+  // win.setTitle("Encryptoor");
 
   win.loadURL(
     isDev
@@ -47,6 +54,10 @@ function createWindow() {
     return { action: "deny" };
   });
 
+  win.webContents.on("will-navigate", (e) => {
+    e.preventDefault();
+  });
+
   // app.on("browser-window-focus", () => {
   //   if (!win || win.isDestroyed()) return;
 
@@ -58,14 +69,17 @@ function createWindow() {
   //   win.webContents.send("ui:focus");
   // });
 
-  win.webContents.on("will-navigate", (e) => {
-    e.preventDefault();
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        "Content-Security-Policy": [
+          "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;",
+        ],
+      },
+    });
   });
-
-  // win.setTitle("Encryptoor");
 }
-
-// app.setName("Encryptoor");
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.

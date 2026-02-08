@@ -52,4 +52,5 @@ module.exports = {
   aesDecrypt,
   aesEncrypt,
   scryptKey,
+  SCRYPT_PARAMS,
 };

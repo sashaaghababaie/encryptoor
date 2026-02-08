@@ -9,7 +9,7 @@ function isTimestamp(v) {
 }
 
 function sanitizeString(v) {
-  return v.trim();
+  return v.trim().replace(/\x00/g, "").normalize("NFC");
 }
 
 function sanitizeLoginEntry(input) {
