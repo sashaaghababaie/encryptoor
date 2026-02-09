@@ -1,7 +1,7 @@
 {
   "name": "local-encryptor",
   "displayName": "Encryptoor",
-  "version": "1.11.0",
+  "version": "1.11.1",
   "author": {
     "name": "Sasha Aghababaie",
     "description": "A local encryptor for secure text stuff."
@@ -20,7 +20,6 @@
     "react-dom": "^18.2.0",
     "react-dropzone": "^14.3.8",
     "react-icons": "^5.5.0",
-    "react-router-dom": "^6.14.2",
     "react-scripts": "5.0.1",
     "semver": "^7.7.4",
     "sqlite": "^5.1.1",
