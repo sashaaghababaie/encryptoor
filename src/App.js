@@ -1,4 +1,4 @@
-import Main from "electron/main";
+import Main from "./components/Main";
 import { ContextProvider } from "./context/Context";
 
 export default function App() {

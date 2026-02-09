@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import Vault from "../components/Vault";
-import Start from "../components/Start";
+import Vault from "./Vault";
+import Start from "./Start";
 import { useAppContext } from "../context/Context";
 
 export default function Main() {
