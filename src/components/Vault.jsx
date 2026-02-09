@@ -1,245 +1,10 @@
 import { motion, AnimatePresence } from "motion/react";
-import {
-  LuFilePlus,
-  LuCircleUserRound,
-  LuLock,
-  LuShare,
-  LuImport,
-} from "react-icons/lu";
 import { useState, useEffect } from "react";
-import { Panel } from "./Panel";
-import { LoginForm, NoteForm } from "./Froms";
-import Layout from "./layout/Layout";
 import { Lock, ChangePassword } from "./Lock";
 import { useAppContext } from "../context/Context";
 import { VaultDoor } from "./anim/VaultDoor";
-import ExportBackupModal from "./ExportBackupModal";
-import ImportBackupModal from "./ImportBackupModal";
-
-/**
- *
- */
-const ActionButton = ({ children, ...props }) => {
-  return (
-    <motion.button
-      className="text-white/70 w-full h-16 rounded-full flex items-center b"
-      initial={{ scale: 0.6, opacity: 0.8 }}
-      animate={{ scale: 1, opacity: 1 }}
-      whileHover={{ scale: 1.1, opacity: 1 }}
-      {...props}
-    >
-      <span className="w-full flex items-center justify-between transition h-full rounded-full middle-btn-3">
-        {children}
-      </span>
-    </motion.button>
-  );
-};
-
-/**
- *
- */
-const OpenVault = ({ setLock }) => {
-  const [panelState, setPanelState] = useState("active");
-  const [hoverLock, setHoverLock] = useState(false);
-  const [hoverBackup, setHoverBackup] = useState(false);
-  const [hoverImport, setHoverImport] = useState(false);
-  const [showBackupModal, setShowBackupModal] = useState(false);
-
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [editor, setEditor] = useState({
-    show: false,
-    type: "login",
-    animate: "show",
-    initData: null,
-  });
-
-  const { setData, setSession } = useAppContext();
-
-  const handleLock = async () => {
-    await window.api.lock();
-    setSession("");
-    setData([]);
-    setLock();
-  };
-
-  return (
-    <Layout>
-      <ExportBackupModal
-        isOpen={showBackupModal}
-        onClose={() => setShowBackupModal(false)}
-      />
-      <ImportBackupModal
-        isOpen={showImportModal}
-        onClose={() => setShowImportModal(false)}
-      />
-      <motion.div
-        initial={{ scale: 0.5, opacity: 0.5 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.5, opacity: 0.5 }}
-        className="relative w-full h-full"
-      >
-        <AnimatePresence>
-          {editor.show && (
-            <motion.div
-              onClick={() => {
-                setEditor({ ...editor, animate: "show" });
-                setPanelState("inactive");
-              }}
-              variants={{
-                show: { opacity: 1, scale: 1, backdropFilter: "blur(4px)" },
-                disable: {
-                  opacity: 0.8,
-                  scale: 0.8,
-                  y: 26,
-                  backdropFilter: "none",
-                },
-              }}
-              className={`${
-                editor.animate === "disable" ? "z-10" : "z-30"
-              } border border-lime-100/10 bg-zinc-800/50 absolute top-0 p-4 left-0 w-full h-[464px] rounded-3xl`}
-              initial={{ opacity: 0, scale: 0.15 }}
-              animate={editor.animate}
-              exit={{ opacity: 0, scale: 0.15 }}
-            >
-              {editor.type === "login" ? (
-                <LoginForm
-                  initData={editor.initData}
-                  onClose={() => {
-                    setTimeout(() => {
-                      setEditor((prev) => ({
-                        ...prev,
-                        initData: null,
-                        show: false,
-                      }));
-                      setPanelState("active");
-                    }, 1);
-                  }}
-                />
-              ) : (
-                <NoteForm
-                  initData={editor.initData}
-                  onClose={() => {
-                    setTimeout(() => {
-                      setEditor((prev) => ({
-                        ...prev,
-                        initData: null,
-                        show: false,
-                      }));
-                      setPanelState("active");
-                    }, 1);
-                  }}
-                />
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-        <div className="h-16">
-          <AnimatePresence>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex justify-between gap-8"
-            >
-              <ActionButton
-                onClick={() => {
-                  setPanelState("inactive");
-                  setEditor({ show: true, type: "login", animate: "show" });
-                }}
-              >
-                <span className="w-full flex items-center justify-between px-1 text-sm font-semibold">
-                  <span className="w-full">+ New Login info</span>
-                  <span className="bg-blue-500/30 shrink-0 h-14 w-14 rounded-full flex items-center justify-center">
-                    <LuCircleUserRound className="w-6 h-6" />
-                  </span>
-                </span>
-              </ActionButton>
-              <ActionButton
-                onClick={() => {
-                  setPanelState("inactive");
-                  setEditor({ show: true, type: "note", animate: "show" });
-                }}
-              >
-                <span className="w-full flex items-center justify-between px-1 text-sm font-semibold">
-                  <span className="w-full">+ New Secure Note</span>
-                  <span className="bg-emerald-500/30 shrink-0 h-14 w-14 rounded-full flex items-center justify-center">
-                    <LuFilePlus className="w-6 h-6" />
-                  </span>
-                </span>
-              </ActionButton>
-            </motion.div>
-          </AnimatePresence>
-        </div>
-        <Panel
-          panelState={panelState}
-          setEditorState={setEditor}
-          setPanelState={setPanelState}
-          editor={editor}
-        />
-      </motion.div>
-      <div className="fixed right-2 bottom-[120px] z-20">
-        <motion.button
-          onHoverStart={() => setHoverLock(true)}
-          onHoverEnd={() => setHoverLock(false)}
-          whileHover={{ width: 126 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
-          onClick={() => handleLock()}
-          className="w-[52px] h-[52px]
-                    rounded-full bg-rose-800 font-bold hover:bg-rose-600 text-white
-                    text-lg flex items-center justify-center hover:text-white overflow-hidden"
-        >
-          {hoverLock ? (
-            <span className="select-none block text-xs font-bold w-[126px] shrink-0">
-              Lock Vault
-            </span>
-          ) : (
-            <LuLock />
-          )}
-        </motion.button>
-      </div>
-      <div className="fixed right-2 bottom-[64px] z-20">
-        <motion.button
-          onHoverStart={() => setHoverBackup(true)}
-          onHoverEnd={() => setHoverBackup(false)}
-          whileHover={{ width: 126 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
-          onClick={() => setShowBackupModal(true)}
-          className="w-[52px] h-[52px]
-                    rounded-full bg-emerald-800 font-bold hover:bg-emerald-600 text-white
-                    text-lg flex items-center justify-center hover:text-white overflow-hidden"
-        >
-          {hoverBackup ? (
-            <span className="select-none block text-xs font-bold w-[126px] shrink-0">
-              Safe Backup
-            </span>
-          ) : (
-            <LuShare />
-          )}
-        </motion.button>
-      </div>
-      <div className="fixed right-2 bottom-2 z-20">
-        <motion.button
-          onHoverStart={() => setHoverImport(true)}
-          onHoverEnd={() => setHoverImport(false)}
-          whileHover={{ width: 126 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
-          onClick={() => setShowImportModal(true)}
-          className="w-[52px] h-[52px]
-                    rounded-full bg-blue-600 font-bold hover:bg-blue-500 text-white
-                    text-lg flex items-center justify-center hover:text-white overflow-hidden"
-        >
-          {hoverImport ? (
-            <span className="select-none block text-xs font-bold w-[126px] shrink-0">
-              Import Backup
-            </span>
-          ) : (
-            <LuImport />
-          )}
-        </motion.button>
-      </div>
-    </Layout>
-  );
-};
+import OpenedVault from "./OpenedVault";
+import { LuX } from "react-icons/lu";
 
 /**
  *
@@ -247,8 +12,57 @@ const OpenVault = ({ setLock }) => {
 export default function Vault() {
   const [state, setState] = useState("close");
   const [offload, setOffload] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState(null);
+  const [updateState, setUpdateState] = useState({
+    status: "idle",
+    percent: null,
+    received: 0,
+    total: 0,
+    error: null,
+  });
 
   const { session } = useAppContext();
+
+  useEffect(() => {
+    (async () => {
+      const lastCheck = Number(
+        localStorage.getItem("vault.update.lastCheck") || "0",
+      );
+
+      const now = Date.now();
+      const minDelay = 48 * 60 * 60 * 1000;
+
+      if (now - lastCheck < minDelay) {
+        return;
+      }
+
+      localStorage.setItem("vault.update.lastCheck", String(now));
+
+      const skippedVersion =
+        localStorage.getItem("vault.update.skippedVersion") || "";
+
+      const res = await window.api.checkForUpdates();
+
+      if (res.available === true && res.version !== skippedVersion) {
+        setUpdateInfo(res);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = window.api.onUpdateProgress((data) => {
+      setUpdateState((prev) => ({
+        ...prev,
+        status: data.status || prev.status,
+        percent: typeof data.percent === "number" ? data.percent : prev.percent,
+        received:
+          typeof data.received === "number" ? data.received : prev.received,
+        total: typeof data.total === "number" ? data.total : prev.total,
+      }));
+    });
+
+    return () => unsubscribe?.();
+  }, []);
 
   useEffect(() => {
     if (state !== "open") return;
@@ -267,6 +81,41 @@ export default function Vault() {
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-black">
+      <UpdateBanner
+        updateInfo={updateInfo}
+        updateState={updateState}
+        onClose={() => setUpdateInfo(null)}
+        onSkip={() => {
+          if (updateInfo?.version) {
+            localStorage.setItem(
+              "vault.update.skippedVersion",
+              updateInfo.version,
+            );
+          }
+          setUpdateInfo(null);
+        }}
+        onDownload={async () => {
+          setUpdateState((prev) => ({
+            ...prev,
+            status: "downloading",
+            error: null,
+          }));
+
+          try {
+            await window.api.downloadUpdate();
+          } catch (err) {
+            setUpdateState((prev) => ({
+              ...prev,
+              status: "error",
+              error: err?.message || "Download failed",
+            }));
+          }
+        }}
+        onCancel={async () => {
+          await window.api.cancelUpdateDownload();
+          setUpdateState((prev) => ({ ...prev, status: "cancelled" }));
+        }}
+      />
       <div className="relative w-full h-full">
         <AnimatePresence>
           {!offload && (
@@ -283,7 +132,7 @@ export default function Vault() {
         </AnimatePresence>
         <AnimatePresence>
           {state === "open" && (
-            <OpenVault
+            <OpenedVault
               setLock={() => {
                 setOffload(false);
                 setState("close");
@@ -295,3 +144,84 @@ export default function Vault() {
     </div>
   );
 }
+
+const UpdateBanner = ({
+  updateInfo,
+  updateState,
+  onClose,
+  onSkip,
+  onDownload,
+  onCancel,
+}) => {
+  const isDownloading =
+    updateState.status === "downloading" || updateState.status === "verifying";
+
+  return (
+    <AnimatePresence>
+      {updateInfo && (
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          exit={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="fixed p-4 bottom-0 left-0 z-50 w-full"
+        >
+          <div className="rounded-3xl flex justify-between p-4 border text-white text-xs border-lime-100/10 bg-lime-700/10 bg-black">
+            <div className="max-w-[60%]">
+              <h3 className="text-yellow-400 font-black">
+                New Update Available! [v{updateInfo.version}]
+              </h3>
+              <p className="mt-2">{updateInfo.releaseNotes}</p>
+              {updateState.error && (
+                <p className="mt-2 text-red-400">{updateState.error}</p>
+              )}
+              {isDownloading && (
+                <div className="mt-3">
+                  <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
+                    <div
+                      className="h-2 bg-blue-400 transition-all"
+                      style={{
+                        width: `${updateState.percent || 0}%`,
+                      }}
+                    />
+                  </div>
+                  <p className="mt-1 text-[10px] text-white/70">
+                    {updateState.status === "verifying"
+                      ? "Verifying download..."
+                      : `Downloading... ${updateState.percent ?? 0}%`}
+                  </p>
+                </div>
+              )}
+            </div>
+            <div className="flex text-black font-black gap-2">
+              {!isDownloading ? (
+                <>
+                  <button
+                    className="rounded-full px-4 h-12 bg-blue-500"
+                    onClick={onDownload}
+                  >
+                    Download
+                  </button>
+                  <button onClick={onSkip}>Skip this version</button>
+                </>
+              ) : (
+                <button
+                  className="rounded-full px-4 h-12 bg-red-500 text-white"
+                  onClick={onCancel}
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+            <button
+              aria-label="close banner"
+              className="text-white hover:text-white/50 duration-200"
+              onClick={onClose}
+            >
+              <LuX className="text-lg" />
+            </button>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};

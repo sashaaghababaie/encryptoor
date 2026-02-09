@@ -34,7 +34,7 @@ export const Lock = ({ setState, state }) => {
       const res = await window.api.unlock(password);
 
       if (res.success) {
-        setSession(res.sessionId);
+        setSession(true);
         setData(res.data);
         setState("open");
         setPassword("");

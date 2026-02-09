@@ -5,8 +5,6 @@ const { ipcRenderer, contextBridge } = require("electron");
 contextBridge.exposeInMainWorld("api", {
   init: () => ipcRenderer.invoke("vault:init"),
 
-  getSession: (sessionId) => ipcRenderer.invoke("vault:session", sessionId),
-
   create: (pass, data) => ipcRenderer.invoke("vault:create", pass, data),
 
   unlock: (pass) => ipcRenderer.invoke("vault:unlock", pass),
@@ -19,44 +17,50 @@ contextBridge.exposeInMainWorld("api", {
 
   onLocked: (cb) => ipcRenderer.on("vault:locked", (_, reason) => cb(reason)),
 
-  upsert: (sessionId, item) =>
-    ipcRenderer.invoke("vault:upsert", sessionId, item),
+  upsert: (item) => ipcRenderer.invoke("vault:upsert", item),
 
-  remove: (sessionId, itemId) =>
-    ipcRenderer.invoke("vault:remove", sessionId, itemId),
+  remove: (itemId) => ipcRenderer.invoke("vault:remove", itemId),
 
   changePassword: (oldPass, newPass) =>
     ipcRenderer.invoke("vault:changePassword", oldPass, newPass),
 
-  importByPath: (sessionId, pass, filePath) =>
-    ipcRenderer.invoke("vault:importByPath", sessionId, pass, filePath),
+  importByPath: (pass, filePath) =>
+    ipcRenderer.invoke("vault:importByPath", pass, filePath),
 
-  importByBuffer: (sessionId, pass, buffer) => {
+  importByBuffer: (pass, buffer) => {
     const nodeBuffer = Buffer.from(buffer);
 
     return ipcRenderer.invoke(
       "vault:importByBuffer",
-      sessionId,
       pass,
       nodeBuffer,
     );
   },
 
-  export: (sessionId, useOldPass, currentPass, newPass) =>
+  export: (useOldPass, currentPass, newPass) =>
     ipcRenderer.invoke(
       "vault:export",
-      sessionId,
       useOldPass,
       currentPass,
       newPass,
     ),
 
-  downloadUpdate: (meta) => {
-    ipcRenderer.invoke("update:download", meta);
+  checkForUpdates: async () => {
+    return await ipcRenderer.invoke("update:check");
+  },
+
+  downloadUpdate: () => {
+    return ipcRenderer.invoke("update:download");
+  },
+
+  cancelUpdateDownload: () => {
+    return ipcRenderer.invoke("update:cancel");
   },
 
   onUpdateProgress: (cb) => {
-    ipcRenderer.on("update:progress", (_, data) => cb(data));
+    const handler = (_, data) => cb(data);
+    ipcRenderer.on("update:progress", handler);
+    return () => ipcRenderer.removeListener("update:progress", handler);
   },
 });
 

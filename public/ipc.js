@@ -1,12 +1,15 @@
 const { ipcMain, BrowserWindow } = require("electron");
-const { downloadUpdateWithProgress } = require("../api/update");
+const {
+  downloadUpdateWithProgress,
+  cancelUpdateDownload,
+  checkForUpdates,
+} = require("../api/update");
 const {
   init,
   exportVault,
   createVault,
   unlockVault,
   upsertItem,
-  requireSession,
   lockVault,
   changePassword,
   removeItem,
@@ -28,43 +31,39 @@ function handleIpcs() {
     return createVault(pass, data);
   });
 
-  ipcMain.handle("vault:unlock", (_, pass) => {
-    return unlockVault(pass);
+  ipcMain.handle("vault:unlock", (e, pass) => {
+    return unlockVault(pass, e.sender.id);
   });
 
   ipcMain.handle(
     "vault:export",
-    (_, sessionId, useOldPass, oldPass, newPass) => {
-      return exportVault(sessionId, useOldPass, oldPass, newPass);
+    (e, useOldPass, oldPass, newPass) => {
+      return exportVault(e.sender.id, useOldPass, oldPass, newPass);
     },
   );
 
-  ipcMain.handle("vault:importByPath", (_, sessionId, pass, filePath) => {
-    return importVaultByFilePath(sessionId, pass, filePath);
+  ipcMain.handle("vault:importByPath", (e, pass, filePath) => {
+    return importVaultByFilePath(e.sender.id, pass, filePath);
   });
 
-  ipcMain.handle("vault:importByBuffer", (_, sessionId, pass, buffer) => {
-    return importVaultByBuffer(sessionId, pass, buffer);
+  ipcMain.handle("vault:importByBuffer", (e, pass, buffer) => {
+    return importVaultByBuffer(e.sender.id, pass, buffer);
   });
 
-  ipcMain.handle("vault:upsert", (_, sessionId, item) => {
-    return upsertItem(sessionId, item);
+  ipcMain.handle("vault:upsert", (e, item) => {
+    return upsertItem(e.sender.id, item);
   });
 
-  ipcMain.handle("vault:remove", (_, sessionId, itemId) => {
-    return removeItem(sessionId, itemId);
+  ipcMain.handle("vault:remove", (e, itemId) => {
+    return removeItem(e.sender.id, itemId);
   });
 
-  ipcMain.handle("vault:copyPassword", (_, sessionId, itemId) => {
-    return requestCopyPassword(sessionId, itemId);
+  ipcMain.handle("vault:copyPassword", (e, itemId) => {
+    return requestCopyPassword(e.sender.id, itemId);
   });
 
-  ipcMain.handle("vault:showPassword", (_, sessionId, itemId) => {
-    return requestShowPassword(sessionId, itemId);
-  });
-
-  ipcMain.handle("vault:session", (_, sessionId) => {
-    return requireSession(sessionId);
+  ipcMain.handle("vault:showPassword", (e, itemId) => {
+    return requestShowPassword(e.sender.id, itemId);
   });
 
   ipcMain.handle("vault:lock", () => {
@@ -75,35 +74,18 @@ function handleIpcs() {
     return changePassword(oldPass, newPass);
   });
 
-  ipcMain.handle("update:download", async (e, meta) => {
+  ipcMain.handle("update:check", async (_) => {
+    return await checkForUpdates();
+  });
+
+  ipcMain.handle("update:download", async (e) => {
     const win = BrowserWindow.fromWebContents(e.sender);
-    return await downloadUpdateWithProgress(win, meta);
+    return await downloadUpdateWithProgress(win);
+  });
+
+  ipcMain.handle("update:cancel", async () => {
+    return cancelUpdateDownload();
   });
 }
 
 module.exports = { handleIpcs };
-
-//examples
-// ipcMain.handle("init", async (event) => {
-//   return await init(app.getPath(dbPath));
-// });
-
-// ipcMain.handle("openChangeDiractory", async (e) => {
-//   let response = await dialog.showOpenDialog({ properties: ["openDirectory"] });
-//   if (response.canceled) return { success: false };
-//   const _path = response.filePaths[0];
-//   return await someapi(app.getPath(dbPath), _path);
-// });
-
-// ipcMain.handle("openDialoge", async (e, arg1, arg2) => {
-//   let response = dialog.showMessageBoxSync(BrowserWindow.getFocusedWindow(), {
-//     type: "question",
-//     buttons: ["No", "Yes"],
-//     title: "Confirm",
-//     message: `${arg1}`,
-//   });
-//   if (response == 1) {
-//     e.preventDefault();
-//     return await someapi(app.getPath(dbPath), arg2);
-//   }
-// });

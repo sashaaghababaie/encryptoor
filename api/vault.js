@@ -5,6 +5,8 @@ const { app, clipboard } = require("electron");
 const isDev = require("electron-is-dev");
 const { sanitizeEntry } = require("./sanitize");
 const vaultEvents = require("./events");
+const { atomicWrite } = require("./helpers");
+const semver = require("semver");
 const { ERRORS } = require("../src/utils/error");
 const {
   aesDecrypt,
@@ -20,7 +22,7 @@ const META_PATH = path.join(VAULT_DIR, "vault.meta.json");
 
 const MAGIC = "ENCRYPTOOR";
 const MAX_ATTEMPTS = 3;
-const COOLDOWN = 10_000;
+const COOLDOWN = isDev ? 10_000 : 15 * 60 * 1000;
 const CURRENT_SCHEMA_VERSION = 1;
 
 let session = null;
@@ -143,7 +145,7 @@ function createVault(masterPassword, data = []) {
     fs.mkdirSync(VAULT_DIR, { recursive: true, mode: 0o700 });
 
     atomicWrite(VAULT_PATH, JSON.stringify(vault, null, 2));
-    atomicWrite(META_PATH, JSON.stringify(meta, null, 2));
+    atomicWrite(META_PATH, JSON.stringify(meta, null, 2), "meta");
 
     return { success: true };
   } catch (err) {
@@ -258,7 +260,7 @@ function resetPasswordCooldown(meta) {
  * @param {*} masterPassword
  * @returns
  */
-function unlockVault(masterPassword) {
+function unlockVault(masterPassword, ownerWebContentsId) {
   try {
     const meta = validateMeta();
 
@@ -301,9 +303,9 @@ function unlockVault(masterPassword) {
       ).toString("utf8"),
     );
 
-    createSession(vaultKey, data);
+    createSession(vaultKey, data, ownerWebContentsId);
 
-    return { success: true, sessionId: session.id, data: secureData(data) };
+    return { success: true, data: secureData(data) };
   } catch (err) {
     return { success: false, error: err.message };
   }
@@ -311,10 +313,14 @@ function unlockVault(masterPassword) {
 
 /**
  *
- * @param {*} sessionId
+ * @param {*} ownerWebContentsId
  */
-function requireSession(sessionId) {
-  if (!session || session.id !== sessionId) {
+function requireSession(ownerWebContentsId) {
+  if (
+    !session ||
+    !session.ownerWebContentsId ||
+    session.ownerWebContentsId !== ownerWebContentsId
+  ) {
     throw new Error(ERRORS.UNAUTHORIZED);
   }
 
@@ -340,13 +346,13 @@ function destroySession(reason) {
 
 /**
  *
- * @param {string} sessionId
+ * @param {string} ownerWebContentsId
  * @param {string} itemId
  * @returns
  */
-function removeItem(sessionId, itemId) {
+function removeItem(ownerWebContentsId, itemId) {
   try {
-    requireSession(sessionId);
+    requireSession(ownerWebContentsId);
 
     const currentData = structuredClone(session.data);
 
@@ -375,9 +381,9 @@ function removeItem(sessionId, itemId) {
   }
 }
 
-function exportVault(sessionId, useOldPass, currentPass, newPass = "") {
+function exportVault(ownerWebContentsId, useOldPass, currentPass, newPass = "") {
   try {
-    requireSession(sessionId);
+    requireSession(ownerWebContentsId);
 
     if (!currentPass) {
       throw new Error("You need to type the vault pass.");
@@ -490,13 +496,13 @@ function exportVault(sessionId, useOldPass, currentPass, newPass = "") {
 }
 /**
  *
- * @param {string} sessionId
+ * @param {string} ownerWebContentsId
  * @param {*} newData
  * @returns
  */
-function upsertItem(sessionId, newItem) {
+function upsertItem(ownerWebContentsId, newItem) {
   try {
-    requireSession(sessionId);
+    requireSession(ownerWebContentsId);
 
     const cleanData = sanitizeEntry(newItem);
 
@@ -624,37 +630,12 @@ function wipeSession() {
   session.id = null;
   session.vaultKey = null;
   session.data = null;
+  session.ownerWebContentsId = null;
   session.lastActivity = null;
   session.timeout = null;
   session.timer = null;
 
   session = null;
-}
-
-/**
- * Atomically write data to a file.
- * @param { path } filePath
- * @param {{[index:string]: string}} data
- */
-function atomicWrite(filePath, data, slug = "vault") {
-  const dir = path.dirname(filePath);
-  const tempPath = path.join(dir, `.tmp-${slug}-${Date.now()}`);
-
-  try {
-    fs.writeFileSync(tempPath, data, { mode: 0o600 });
-    fs.fsyncSync(fs.openSync(tempPath, "r"));
-    fs.renameSync(tempPath, filePath);
-  } catch (err) {
-    if (err.code === "ENOSPC") {
-      throw new Error(ERRORS.DISK_FULL);
-    }
-
-    if (err.code === "EACCES") {
-      throw new Error(ERRORS.PERMISSION_DENIED);
-    }
-
-    throw err;
-  }
 }
 
 /**
@@ -708,13 +689,14 @@ function writeVault(file, data) {
  * @param {*} vaultKey
  * @param {*} data
  */
-function createSession(vaultKey, data) {
+function createSession(vaultKey, data, ownerWebContentsId) {
   const sessionId = crypto.randomUUID();
 
   session = {
     id: sessionId,
     vaultKey,
     data,
+    ownerWebContentsId,
     lastActivity: Date.now(),
     timeout: 600_000,
     timer: null,
@@ -728,9 +710,9 @@ function createSession(vaultKey, data) {
 /**
  *
  */
-function requestCopyPassword(sessionId, itemId) {
+function requestCopyPassword(ownerWebContentsId, itemId) {
   try {
-    requireSession(sessionId);
+    requireSession(ownerWebContentsId);
 
     const item = session.data.find((item) => item.id === itemId);
 
@@ -882,14 +864,14 @@ function importVault(importedVault, pass) {
 
 /**
  *
- * @param {*} sessionId
+ * @param {*} ownerWebContentsId
  * @param {*} pass
  * @param {*} buffer
  * @returns
  */
-function importVaultByBuffer(sessionId, pass, buffer) {
+function importVaultByBuffer(ownerWebContentsId, pass, buffer) {
   try {
-    requireSession(sessionId);
+    requireSession(ownerWebContentsId);
 
     if (!pass || !buffer) {
       throw new Error("Bad Params");
@@ -913,14 +895,14 @@ function importVaultByBuffer(sessionId, pass, buffer) {
 
 /**
  *
- * @param {string} sessionId
+ * @param {string} ownerWebContentsId
  * @param {string} pass
  * @param {string} filePath
  * @returns
  */
-function importVaultByFilePath(sessionId, pass, filePath) {
+function importVaultByFilePath(ownerWebContentsId, pass, filePath) {
   try {
-    requireSession(sessionId);
+    requireSession(ownerWebContentsId);
 
     if (!pass || !filePath) {
       throw new Error("Bad Params");
@@ -957,9 +939,9 @@ function importVaultByFilePath(sessionId, pass, filePath) {
  * @param {*} itemId
  * @returns
  */
-function requestShowPassword(sessionId, itemId) {
+function requestShowPassword(ownerWebContentsId, itemId) {
   try {
-    requireSession(sessionId);
+    requireSession(ownerWebContentsId);
 
     const item = session.data.find((item) => item.id === itemId);
     if (!item) return "";
@@ -1015,7 +997,11 @@ function validateVault(vault) {
     throw new Error("Vault schema incompatible. Please update the app.");
   }
 
-  //semver
+  if (semver.major(app.getVersion()) < semver.major(vault.appVersion)) {
+    throw new Error("App version incompatible. Please update the app.");
+  }
+
+  // later check if app.getVersion.major > vault.appVersion.major
 }
 
 module.exports = {
@@ -1024,7 +1010,6 @@ module.exports = {
   importVaultByBuffer,
   requestShowPassword,
   requestCopyPassword,
-  requireSession,
   init,
   lockVault,
   changePassword,
@@ -1033,20 +1018,3 @@ module.exports = {
   upsertItem,
   removeItem,
 };
-
-// function restoreBackup(file) {
-//   const vault = loadVault(file);
-
-//   // must succeed
-//   const vaultKey = unwrapVaultKey(
-//     password,
-//     vault.protected.encryptedVaultKey
-//   );
-
-//   if (!vaultKey) {
-//     throw new Error("Incorrect password for this backup");
-//   }
-
-//   // restore EXACT vault
-//   atomicWrite(VAULT_PATH, JSON.stringify(vault));
-// }

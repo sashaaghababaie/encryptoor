@@ -1,7 +1,6 @@
 import { motion, AnimatePresence } from "motion/react";
 import { LuX } from "react-icons/lu";
 import { useState, useEffect } from "react";
-import { useAppContext } from "../context/Context";
 import { PasswordInput } from "./ui/Inputs";
 import Modal from "./ui/Modal";
 
@@ -18,7 +17,6 @@ export default function ExportBackupModal({ onClose, isOpen }) {
   const [success, setSuccess] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const { session } = useAppContext();
 
   useEffect(() => {
     setNewPass("");
@@ -95,7 +93,6 @@ export default function ExportBackupModal({ onClose, isOpen }) {
       const useOldPass = newPass.length === 0 && state === "current";
 
       const res = await window.api.export(
-        session,
         useOldPass,
         currentPass,
         newPass

@@ -84,7 +84,7 @@ export default function ImportBackupModal({ onClose, isOpen }) {
   const [success, setSuccess] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const { session, setData } = useAppContext();
+  const { setData } = useAppContext();
 
   useEffect(() => {
     if (!file) setPass("");
@@ -124,9 +124,9 @@ export default function ImportBackupModal({ onClose, isOpen }) {
       let res;
 
       if (file.buffer) {
-        res = await window.api.importByBuffer(session, pass, file.buffer);
+        res = await window.api.importByBuffer(pass, file.buffer);
       } else {
-        res = await window.api.importByPath(session, pass, file.filePath);
+        res = await window.api.importByPath(pass, file.filePath);
       }
 
       if (res.success === true) {

@@ -15,7 +15,7 @@ export const LoginForm = ({ onClose, initData }) => {
     initData || { username: "", password: "", website: "", title: "" }
   );
 
-  const { setData, session } = useAppContext();
+  const { setData } = useAppContext();
 
   useEffect(() => {
     const down = (e) => {
@@ -55,7 +55,7 @@ export const LoginForm = ({ onClose, initData }) => {
         updatedAt,
       };
 
-      const res = await window.api.upsert(session, loginInfo);
+      const res = await window.api.upsert(loginInfo);
 
       if (res.success === true) {
         setData(res.data);
@@ -171,7 +171,7 @@ export const NoteForm = ({ onClose, initData }) => {
   const [inputError, setInputError] = useState("");
   const [error, setError] = useState("");
 
-  const { setData, session } = useAppContext();
+  const { setData } = useAppContext();
 
   useEffect(() => {
     const down = (e) => {
@@ -211,7 +211,7 @@ export const NoteForm = ({ onClose, initData }) => {
         updatedAt,
       };
 
-      const res = await window.api.upsert(session, noteInfo);
+      const res = await window.api.upsert(noteInfo);
 
       if (res.success === true) {
         setData(res.data);

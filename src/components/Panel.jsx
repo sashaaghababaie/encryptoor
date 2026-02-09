@@ -21,7 +21,7 @@ export const Panel = ({
   const [filter, setFilter] = useState(["login", "note"]);
   const [error, setError] = useState("");
 
-  const { setData, session } = useAppContext();
+  const { setData } = useAppContext();
 
   useEffect(() => setShowFirstTime(true), []);
 
@@ -142,10 +142,7 @@ export const Panel = ({
                           isRemoving={removingId === item.id}
                           onRemoveComplete={() => {
                             (async () => {
-                              const res = await window.api.remove(
-                                session,
-                                item.id
-                              );
+                              const res = await window.api.remove(item.id);
 
                               if (res.success === true) {
                                 setData(res.data);

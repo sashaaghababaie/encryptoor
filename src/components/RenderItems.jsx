@@ -10,7 +10,6 @@ import {
   LuCircleUserRound,
 } from "react-icons/lu";
 import { Copiable, SafeCopiable } from "./ui/Copiable";
-import { useAppContext } from "../context/Context";
 
 /**
  *
@@ -231,7 +230,6 @@ const LoginView = ({
   const [hoverEdit, setHoverEdit] = useState(false);
   const [realPass, setRealPass] = useState("");
 
-  const { session } = useAppContext();
 
   useEffect(() => {
     setRealPass(false);
@@ -281,7 +279,7 @@ const LoginView = ({
   }, [startDelete]);
 
   const handleShowPassword = async () => {
-    const pass = await window.api.show(session, item.id);
+    const pass = await window.api.show(item.id);
     setRealPass(pass);
     setTimeout(() => setRealPass(""), 5000);
   };

@@ -112,6 +112,7 @@ app.on("before-quit", () => lockVault("quit"));
 app.on("will-quit", () => lockVault("quit"));
 
 app.on("browser-window-minimize", () => lockVault("minimize"));
+
 // contents.on("will-navigate", (e) => {
 //   e.preventDefault();
 // });
