@@ -1,7 +1,7 @@
 {
   "name": "encryptoor",
   "displayName": "Encryptoor",
-  "version": "1.12.0",
+  "version": "1.12.1",
   "description": "A local encryptor for secure text stuff.",
   "author": {
     "name": "Sasha Aghababaie"
@@ -81,7 +81,8 @@
       "api/**/*",
       "build/**/*",
       "!build/**/*.map",
-      "node_modules/**/*"
+      "node_modules/**/*",
+      "package.json"
     ],
     "directories": {
       "buildResources": "build-resources",
