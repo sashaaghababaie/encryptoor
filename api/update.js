@@ -3,80 +3,92 @@ const path = require("path");
 const https = require("https");
 const crypto = require("crypto");
 const semver = require("semver");
-const { app } = require("electron");
-const PUBLIC_KEY_PEM = "SOME-PUBKEY";
+const { app, shell } = require("electron");
+
 const OFFICIAL_UPDATE_DOMAIN = "sashaaghababaie.github.io/some/url";
 const MANIFEST_URL = "sashaaghababaie.github.io/some/url/update.json";
 
+const PUBLIC_KEY_PEM = `-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAo+i/Nk0f3TuS5AgcKCrW
+DymdVFjI/uY8FKVEM1m2MNKUKYcHeY56XTCyjsePhyBDfxOQ9Jj+EVCfr4Cu2kDb
+6peP+v1ubFxNxMNJpStVkzlEHokWt3teY/PQi9RkNbVAwdgDtr2o9xzyi4u+2gRq
+jBt+0KTO+z4bfiiPhHCdHzr3Fu0unLVZZsAt2jeGbIvgMchL9HASTfq6ZKcCT5YW
+6JyKHHDK3iTnfx5x89E8lgb8aqsZ1V7/+h9K/WaSNbFtLRwXuEqKTZe+xwEFOHrH
+eaWGBiRKEJQRZlh4bhW4rd4cGbTe/Smt4s1OnTBG8f7S38JNZFFH97RNMWhBgC3p
+IQIDAQAB
+-----END PUBLIC KEY-----`;
+
 let updateInfo = null;
+let downloadedDest = null;
 let activeDownload = null;
 
-const exampleUpdateManifest = {
-  version: "1.11.2",
-  releaseDate: "2024-02-09",
-  platforms: {
-    darwin: {
-      url: "https://updates.yourdomain.com/releases/Encryptoor-1.9.2.dmg",
-      sha256: "abc123...",
-      size: 45234567,
-      signature: "RSA_SIGNATURE_HERE",
-    },
-    win32: {
-      url: "https://updates.yourdomain.com/releases/Encryptoor-1.9.2.exe",
-      sha256: "def456...",
-      size: 52345678,
-      signature: "RSA_SIGNATURE_HERE",
-    },
-  },
-  releaseNotes: "Bug fixes and security improvements",
-};
-
-// const OFFICIAL_UPDATE_DOMAIN = "";
-// const MANIFEST_URL = "";
 /**
- *
- * @param {*} filePath
- * @returns
+ *  Calculate SHA256 hash from a buffer (single read)
+ * @param {Buffer} fileBuffer - File content as buffer
+ * @returns {string} - Hex hash
  */
-function sha256File(filePath) {
-  //   const hash = crypto.createHash("sha256");
-  //   const fd = fs.openSync(filePath, "r");
+function sha256Buffer(fileBuffer) {
+  const hash = crypto.createHash("sha256");
+  hash.update(fileBuffer);
 
-  //   const buf = Buffer.allocUnsafe(1024 * 1024);
-  //   let bytesRead;
-
-  //   while ((bytesRead = fs.readSync(fd, buf, 0, buf.length, null)) > 0) {
-  //     hash.update(buf.subarray(0, bytesRead));
-  //   }
-
-  //   fs.closeSync(fd);
-
-  //   return hash.digest("hex");
-  return new Promise((resolve, reject) => {
-    const hash = crypto.createHash("sha256");
-    const stream = fs.createReadStream(filePath);
-
-    stream.on("data", (chunk) => hash.update(chunk));
-    stream.on("end", () => resolve(hash.digest("hex")));
-    stream.on("error", reject);
-  });
+  return hash.digest("hex");
 }
 
 /**
- *
- * @param {*} filePath
- * @param {*} signatureBase64
- * @param {*} publicKeyPem
- * @returns
+ *  Verify signature from a buffer (single read)
+ * @param {Buffer} fileBuffer - File content as buffer
+ * @param {string} signatureBase64 - Base64 encoded signature
+ * @param {string} publicKeyPem - Public key in PEM format
+ * @returns {boolean} - True if signature is valid
  */
-function verifyUpdateSignature(filePath, signatureBase64, publicKeyPem) {
-  const fileBuffer = fs.readFileSync(filePath);
+function verifySignatureBuffer(fileBuffer, signatureBase64, publicKeyPem) {
   const signature = Buffer.from(signatureBase64, "base64");
-
   const verifier = crypto.createVerify("RSA-SHA256");
   verifier.update(fileBuffer);
 
   return verifier.verify(publicKeyPem, signature);
+}
+
+async function verifyDownloadedFile(
+  filePath,
+  expectedHash,
+  signatureBase64,
+  publicKeyPem,
+) {
+  try {
+    const fileBuffer = await fs.promises.readFile(filePath);
+
+    // 1. Verify SHA256 hash
+    const actualHash = sha256Buffer(fileBuffer);
+
+    if (actualHash !== expectedHash) {
+      return {
+        valid: false,
+        error: "Hash verification failed",
+      };
+    }
+
+    // 2. Verify signature
+    const signatureValid = verifySignatureBuffer(
+      fileBuffer,
+      signatureBase64,
+      publicKeyPem,
+    );
+
+    if (!signatureValid) {
+      return {
+        valid: false,
+        error: "Signature verification failed",
+      };
+    }
+
+    return { valid: true };
+  } catch (error) {
+    return {
+      valid: false,
+      error: `Verification error: ${error.message}`,
+    };
+  }
 }
 
 /**
@@ -85,142 +97,163 @@ function verifyUpdateSignature(filePath, signatureBase64, publicKeyPem) {
  * @param {*} param1
  * @returns
  */
-function downloadUpdateWithProgress(win) {
-  if (activeDownload) {
-    throw new Error("Download already in progress");
-  }
+async function downloadUpdateWithProgress(win) {
+  try {
+    if (activeDownload) {
+      throw new Error("Download already in progress");
+    }
 
-  if (!updateInfo) {
-    throw new Error("Unexpected");
-  }
+    if (!updateInfo) {
+      throw new Error(
+        "Cannot fetch update info right now. Please try again later.",
+      );
+    }
 
-  const { url, sha256, signature } = updateInfo;
+    const { url, sha256, signature } = updateInfo;
 
-  if (!url || !sha256 || !signature) {
-    throw new Error("Missing update metadata");
-  }
+    if (!url || !sha256 || !signature) {
+      throw new Error("Missing update metadata, Please try again later.");
+    }
 
-  const urlObject = new URL(url.startsWith("http") ? url : `https://${url}`);
+    const urlObject = new URL(url.startsWith("http") ? url : `https://${url}`);
 
-  const officialHost = new URL(
-    OFFICIAL_UPDATE_DOMAIN.startsWith("http")
-      ? OFFICIAL_UPDATE_DOMAIN
-      : `https://${OFFICIAL_UPDATE_DOMAIN}`,
-  ).hostname;
+    const officialHost = new URL(
+      OFFICIAL_UPDATE_DOMAIN.startsWith("http")
+        ? OFFICIAL_UPDATE_DOMAIN
+        : `https://${OFFICIAL_UPDATE_DOMAIN}`,
+    ).hostname;
 
-  if (urlObject.hostname !== officialHost) {
-    throw new Error("Invalid update source");
-  }
+    if (urlObject.hostname !== officialHost) {
+      throw new Error("Invalid update source, Please try again later.");
+    }
 
-  const dest = path.join(app.getPath("downloads"), path.basename(url));
+    const dest = path.join(app.getPath("downloads"), path.basename(url));
 
-  return new Promise((resolve, reject) => {
-    const req = https.get(urlObject, (res) => {
-      if (res.statusCode !== 200) {
-        reject(new Error("Download failed"));
-        return;
-      }
+    await new Promise((resolve, reject) => {
+      const req = https.get(urlObject, (res) => {
+        if (res.statusCode !== 200) {
+          reject(new Error("Download failed. Please try again later."));
+          return;
+        }
 
-      const total = Number(res.headers["content-length"]);
-      let received = 0;
+        const total = Number(res.headers["content-length"]);
 
-      const file = fs.createWriteStream(dest, { mode: 0o600 });
-      activeDownload = { req, file, dest, win, reject, cancelled: false };
+        let received = 0;
 
-      res.on("data", (chunk) => {
-        received += chunk.length;
-        const percent =
-          Number.isFinite(total) && total > 0
-            ? Math.round((received / total) * 100)
-            : null;
-        win.webContents.send("update:progress", {
-          status: "downloading",
-          received,
-          total,
-          percent,
+        const file = fs.createWriteStream(dest, { mode: 0o600 });
+
+        activeDownload = { req, file, dest, win, reject, cancelled: false };
+
+        res.on("data", (chunk) => {
+          received += chunk.length;
+          const percent =
+            Number.isFinite(total) && total > 0
+              ? Math.round((received / total) * 100)
+              : null;
+          if (win && !win.isDestroyed()) {
+            win.webContents.send("update:progress", {
+              status: "downloading",
+              received,
+              total,
+              percent,
+            });
+          }
+        });
+
+        res.pipe(file);
+
+        res.on("error", (err) => {
+          reject(err);
+        });
+
+        file.on("error", (err) => {
+          reject(err);
+        });
+
+        file.on("finish", () => {
+          file.close(() => {
+            (async () => {
+              try {
+                if (activeDownload?.cancelled) {
+                  return;
+                }
+
+                if (win && !win.isDestroyed()) {
+                  win.webContents.send("update:progress", {
+                    status: "verifying",
+                    received,
+                    total,
+                    percent:
+                      Number.isFinite(total) && total > 0
+                        ? Math.round((received / total) * 100)
+                        : null,
+                  });
+                }
+
+                const verification = await verifyDownloadedFile(
+                  dest,
+                  sha256,
+                  signature,
+                  PUBLIC_KEY_PEM,
+                );
+
+                if (!verification.valid) {
+                  // Delete invalid file
+                  fs.unlinkSync(dest);
+                  reject(
+                    new Error(verification.error || "Verification failed"),
+                  );
+                  return;
+                }
+                if (win && !win.isDestroyed()) {
+                  win.webContents.send("update:progress", {
+                    status: "completed",
+                    received: total,
+                    total,
+                    percent: 100,
+                  });
+                }
+
+                downloadedDest = dest;
+
+                resolve();
+              } catch (err) {
+                reject(err);
+              } finally {
+                activeDownload = null;
+              }
+            })();
+          });
         });
       });
 
-      res.pipe(file);
-
-      res.on("error", (err) => {
+      req.on("error", (err) => {
+        activeDownload = null;
         reject(err);
       });
 
-      file.on("error", (err) => {
-        reject(err);
-      });
-
-      file.on("finish", () => {
-        file.close(() => {
-          (async () => {
-            try {
-              if (activeDownload?.cancelled) {
-                return;
-              }
-
-              win.webContents.send("update:progress", {
-                status: "verifying",
-                received,
-                total,
-                percent:
-                  Number.isFinite(total) && total > 0
-                    ? Math.round((received / total) * 100)
-                    : null,
-              });
-
-              const actual = await sha256File(dest);
-
-              if (actual !== sha256) {
-                fs.unlinkSync(dest);
-                reject(new Error("Integrity check failed"));
-                return;
-              }
-
-              const verifySignature = verifyUpdateSignature(
-                dest,
-                signature,
-                PUBLIC_KEY_PEM,
-              );
-
-              if (!verifySignature) {
-                fs.unlinkSync(dest);
-                reject(new Error("Integrity check failed"));
-                return;
-              }
-
-              win.webContents.send("update:progress", {
-                status: "completed",
-                received: total,
-                total,
-                percent: 100,
-              });
-
-              resolve({ path: dest });
-            } catch (err) {
-              reject(err);
-            } finally {
-              activeDownload = null;
-            }
-          })();
-        });
+      req.on("close", () => {
+        if (activeDownload?.cancelled) {
+          return;
+        }
+        activeDownload = null;
       });
     });
 
-    req.on("error", (err) => {
+    return { success: true };
+  } catch (err) {
+    if (activeDownload) {
       activeDownload = null;
-      reject(err);
-    });
+    }
 
-    req.on("close", () => {
-      if (activeDownload?.cancelled) {
-        return;
-      }
-      activeDownload = null;
-    });
-  });
+    return { success: false, error: err.message };
+  }
 }
 
+/**
+ *
+ * @returns
+ */
 function cancelUpdateDownload() {
   if (!activeDownload) {
     return { cancelled: false };
@@ -265,8 +298,6 @@ async function checkForUpdates() {
 
     const manifest = await res.json();
 
-    // const manifest = fake;
-
     const latestVersion = manifest.version;
 
     if (semver.gt(latestVersion, app.getVersion())) {
@@ -303,7 +334,21 @@ async function checkForUpdates() {
   }
 }
 
+/**
+ *
+ */
+function showDownloadedFile() {
+  if (fs.existsSync(downloadedDest)) {
+    shell.showItemInFolder(downloadedDest);
+  } else {
+    shell.openPath(app.getPath("downloads"));
+  }
+
+  downloadedDest = null;
+}
+
 module.exports = {
+  showDownloadedFile,
   downloadUpdateWithProgress,
   cancelUpdateDownload,
   checkForUpdates,

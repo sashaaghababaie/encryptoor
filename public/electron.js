@@ -1,4 +1,3 @@
-// ./public/electron.js
 const path = require("path");
 const { app, BrowserWindow, powerMonitor, session } = require("electron");
 const isDev = require("electron-is-dev");
@@ -30,9 +29,7 @@ function createWindow() {
       navigateOnDragDrop: false,
     },
   });
-
-  // app.setName("Encryptoor");
-  // win.setTitle("Encryptoor");
+  win.setTitle("Encryptoor");
 
   win.loadURL(
     isDev
@@ -84,6 +81,7 @@ function createWindow() {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
+// app.setName("Encryptoor");
 app.whenReady().then(() => {
   createWindow();
 
@@ -92,6 +90,8 @@ app.whenReady().then(() => {
     app.quit();
   }
 });
+
+app.setName("Encryptoor");
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bars to stay active until the user quits
@@ -104,6 +104,7 @@ app.on("window-all-closed", () => {
 
 process.on("uncaughtException", (err) => {
   lockVault("uncaughtException");
+
   app.exit(1);
 });
 

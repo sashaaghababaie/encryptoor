@@ -3,6 +3,7 @@ const {
   downloadUpdateWithProgress,
   cancelUpdateDownload,
   checkForUpdates,
+  showDownloadedFile,
 } = require("../api/update");
 const {
   init,
@@ -35,12 +36,9 @@ function handleIpcs() {
     return unlockVault(pass, e.sender.id);
   });
 
-  ipcMain.handle(
-    "vault:export",
-    (e, useOldPass, oldPass, newPass) => {
-      return exportVault(e.sender.id, useOldPass, oldPass, newPass);
-    },
-  );
+  ipcMain.handle("vault:export", (e, useOldPass, oldPass, newPass) => {
+    return exportVault(e.sender.id, useOldPass, oldPass, newPass);
+  });
 
   ipcMain.handle("vault:importByPath", (e, pass, filePath) => {
     return importVaultByFilePath(e.sender.id, pass, filePath);
@@ -72,6 +70,10 @@ function handleIpcs() {
 
   ipcMain.handle("vault:changePassword", (_, oldPass, newPass) => {
     return changePassword(oldPass, newPass);
+  });
+
+  ipcMain.handle("update:showFile", (_) => {
+    return showDownloadedFile();
   });
 
   ipcMain.handle("update:check", async (_) => {

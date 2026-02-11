@@ -15,7 +15,11 @@ contextBridge.exposeInMainWorld("api", {
 
   show: (itemId) => ipcRenderer.invoke("vault:showPassword", itemId),
 
-  onLocked: (cb) => ipcRenderer.on("vault:locked", (_, reason) => cb(reason)),
+  onLocked: (cb) => {
+    const handler = (_, reason) => cb(reason);
+    ipcRenderer.on("vault:locked", handler);
+    return () => ipcRenderer.removeListener("vault:locked", handler);
+  },
 
   upsert: (item) => ipcRenderer.invoke("vault:upsert", item),
 
@@ -29,33 +33,19 @@ contextBridge.exposeInMainWorld("api", {
 
   importByBuffer: (pass, buffer) => {
     const nodeBuffer = Buffer.from(buffer);
-
-    return ipcRenderer.invoke(
-      "vault:importByBuffer",
-      pass,
-      nodeBuffer,
-    );
+    return ipcRenderer.invoke("vault:importByBuffer", pass, nodeBuffer);
   },
 
   export: (useOldPass, currentPass, newPass) =>
-    ipcRenderer.invoke(
-      "vault:export",
-      useOldPass,
-      currentPass,
-      newPass,
-    ),
+    ipcRenderer.invoke("vault:export", useOldPass, currentPass, newPass),
 
-  checkForUpdates: async () => {
-    return await ipcRenderer.invoke("update:check");
-  },
+  checkForUpdates: async () => await ipcRenderer.invoke("update:check"),
 
-  downloadUpdate: () => {
-    return ipcRenderer.invoke("update:download");
-  },
+  downloadUpdate: () => ipcRenderer.invoke("update:download"),
 
-  cancelUpdateDownload: () => {
-    return ipcRenderer.invoke("update:cancel");
-  },
+  showDownloadedFile: () => ipcRenderer.invoke("update:showFile"),
+
+  cancelUpdateDownload: () => ipcRenderer.invoke("update:cancel"),
 
   onUpdateProgress: (cb) => {
     const handler = (_, data) => cb(data);
@@ -63,26 +53,3 @@ contextBridge.exposeInMainWorld("api", {
     return () => ipcRenderer.removeListener("update:progress", handler);
   },
 });
-
-// contextBridge.exposeInMainWorld("api", {
-// examples
-// init: async (e) => {
-//   return ipcRenderer.invoke("init");
-// },
-// openChangeDiractory: async (args1, args2) => {
-//   return ipcRenderer.invoke("openDialoge", args1, args2);
-// },
-// changeDirectory: async () => {
-//   return ipcRenderer.invoke("changeDirectory");
-// },
-// });
-
-// contextBridge.exposeInMainWorld("api", {
-//   init: async () => await ipcRenderer.invoke("vault:init"),
-//   encryptVault: async (passkey, data) =>
-//     await ipcRenderer.invoke("vault:encrypt", passkey, data),
-//   decryptVault: async (passkey) =>
-//     await ipcRenderer.invoke("vault:decrypt", passkey),
-//   exportVault: async (passkey, data) =>
-//     await ipcRenderer.invoke("vault:export", passkey, data),
-// });

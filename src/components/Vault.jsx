@@ -13,13 +13,6 @@ export default function Vault() {
   const [state, setState] = useState("close");
   const [offload, setOffload] = useState(false);
   const [updateInfo, setUpdateInfo] = useState(null);
-  const [updateState, setUpdateState] = useState({
-    status: "idle",
-    percent: null,
-    received: 0,
-    total: 0,
-    error: null,
-  });
 
   const { session } = useAppContext();
 
@@ -32,9 +25,9 @@ export default function Vault() {
       const now = Date.now();
       const minDelay = 48 * 60 * 60 * 1000;
 
-      if (now - lastCheck < minDelay) {
-        return;
-      }
+      // if (now - lastCheck < minDelay) {
+      //   return;
+      // }
 
       localStorage.setItem("vault.update.lastCheck", String(now));
 
@@ -47,21 +40,6 @@ export default function Vault() {
         setUpdateInfo(res);
       }
     })();
-  }, []);
-
-  useEffect(() => {
-    const unsubscribe = window.api.onUpdateProgress((data) => {
-      setUpdateState((prev) => ({
-        ...prev,
-        status: data.status || prev.status,
-        percent: typeof data.percent === "number" ? data.percent : prev.percent,
-        received:
-          typeof data.received === "number" ? data.received : prev.received,
-        total: typeof data.total === "number" ? data.total : prev.total,
-      }));
-    });
-
-    return () => unsubscribe?.();
   }, []);
 
   useEffect(() => {
@@ -82,8 +60,8 @@ export default function Vault() {
   return (
     <div className="h-screen w-screen overflow-hidden bg-black">
       <UpdateBanner
+        state={state}
         updateInfo={updateInfo}
-        updateState={updateState}
         onClose={() => setUpdateInfo(null)}
         onSkip={() => {
           if (updateInfo?.version) {
@@ -93,27 +71,6 @@ export default function Vault() {
             );
           }
           setUpdateInfo(null);
-        }}
-        onDownload={async () => {
-          setUpdateState((prev) => ({
-            ...prev,
-            status: "downloading",
-            error: null,
-          }));
-
-          try {
-            await window.api.downloadUpdate();
-          } catch (err) {
-            setUpdateState((prev) => ({
-              ...prev,
-              status: "error",
-              error: err?.message || "Download failed",
-            }));
-          }
-        }}
-        onCancel={async () => {
-          await window.api.cancelUpdateDownload();
-          setUpdateState((prev) => ({ ...prev, status: "cancelled" }));
         }}
       />
       <div className="relative w-full h-full">
@@ -145,80 +102,171 @@ export default function Vault() {
   );
 }
 
-const UpdateBanner = ({
-  updateInfo,
-  updateState,
-  onClose,
-  onSkip,
-  onDownload,
-  onCancel,
-}) => {
+const UpdateBanner = ({ state, updateInfo, onClose, onSkip }) => {
+  const [updateState, setUpdateState] = useState({
+    status: "idle",
+    percent: null,
+    received: 0,
+    total: 0,
+    error: null,
+  });
+
+  useEffect(() => {
+    const unsubscribe = window.api.onUpdateProgress((data) => {
+      setUpdateState((prev) => ({
+        ...prev,
+        status: data.status || prev.status,
+        percent: typeof data.percent === "number" ? data.percent : prev.percent,
+        received:
+          typeof data.received === "number" ? data.received : prev.received,
+        total: typeof data.total === "number" ? data.total : prev.total,
+      }));
+    });
+
+    return () => unsubscribe?.();
+  }, []);
+
   const isDownloading =
     updateState.status === "downloading" || updateState.status === "verifying";
 
+  const onDownload = async () => {
+    setUpdateState((prev) => ({
+      ...prev,
+      status: "downloading",
+      error: null,
+    }));
+
+    try {
+      const res = await window.api.downloadUpdate();
+
+      if (res.success === true) {
+        setUpdateState((prev) => ({
+          ...prev,
+          status: "completed",
+          error: null,
+        }));
+      } else {
+        throw new Error(
+          res.error || "Download failed. Please try again later.",
+        );
+      }
+    } catch (err) {
+      setUpdateState((prev) => ({
+        ...prev,
+        status: "error",
+        error: err?.message || "Download failed. Please try again later.",
+      }));
+    }
+  };
+
+  const onCancel = async () => {
+    await window.api.cancelUpdateDownload();
+    setUpdateState((prev) => ({ ...prev, status: "cancelled" }));
+  };
+
   return (
     <AnimatePresence>
-      {updateInfo && (
+      {updateInfo && state !== "disable" && (
         <motion.div
-          initial={{ scale: 0, opacity: 0 }}
-          exit={{ scale: 0, opacity: 0 }}
+          initial={{ scale: 0.8, opacity: 0 }}
+          exit={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="fixed p-4 bottom-0 left-0 z-50 w-full"
+          className="fixed flex justify-center p-4 bottom-0 left-0 z-50 w-full"
         >
-          <div className="rounded-3xl flex justify-between p-4 border text-white text-xs border-lime-100/10 bg-lime-700/10 bg-black">
-            <div className="max-w-[60%]">
-              <h3 className="text-yellow-400 font-black">
-                New Update Available! [v{updateInfo.version}]
-              </h3>
-              <p className="mt-2">{updateInfo.releaseNotes}</p>
-              {updateState.error && (
-                <p className="mt-2 text-red-400">{updateState.error}</p>
-              )}
-              {isDownloading && (
-                <div className="mt-3">
-                  <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
-                    <div
-                      className="h-2 bg-blue-400 transition-all"
-                      style={{
-                        width: `${updateState.percent || 0}%`,
-                      }}
-                    />
-                  </div>
-                  <p className="mt-1 text-[10px] text-white/70">
-                    {updateState.status === "verifying"
-                      ? "Verifying download..."
-                      : `Downloading... ${updateState.percent ?? 0}%`}
-                  </p>
-                </div>
-              )}
-            </div>
-            <div className="flex text-black font-black gap-2">
+          <div className="rounded-3xl w-full backdrop-blur-lg max-w-[700px] p-4 border text-white text-xs border-lime-100/10 bg-lime-700/10">
+            <div className="flex justify-between">
+              <div className="flex flex-col w-full sm:flex-row gap-y-6 justify-between">
+                {updateState.status === "completed" && (
+                  <>
+                    <p className="text-emerald-300 w-full font-black max-w-md">
+                      Download is completed and verified, Please close the app
+                      and install the update.
+                    </p>
+                    <button
+                      className="rounded-full max-w-44 shrink-0 font-black mr-4 px-3 h-8 hover:bg-blue-500 duration-200 bg-blue-600 text-white"
+                      onClick={() => window.api.showDownloadedFile()}
+                    >
+                      Open file location
+                    </button>
+                  </>
+                )}
+                {updateState.status !== "completed" && (
+                  <>
+                    <div>
+                      <h3 className="text-yellow-400 font-black">
+                        New Update Available! [v{updateInfo.version}]
+                      </h3>
+                      <p className="mt-2 max-w-md">{updateInfo.releaseNotes}</p>
+                      {updateState.error && (
+                        <p className="mt-2 text-red-400">{updateState.error}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center font-black gap-4 mr-4">
+                      {!isDownloading && (
+                        <>
+                          <button
+                            className="rounded-full font-black text-black px-4 h-8 duration-200 hover:bg-blue-500 bg-blue-600"
+                            onClick={onDownload}
+                          >
+                            Download
+                          </button>
+                          <button
+                            className="text-white/70 underline duration-200 hover:text-white/40"
+                            onClick={onSkip}
+                          >
+                            Skip this version
+                          </button>
+                        </>
+                      )}
+                    </div>{" "}
+                  </>
+                )}
+              </div>
+
               {!isDownloading ? (
-                <>
-                  <button
-                    className="rounded-full px-4 h-12 bg-blue-500"
-                    onClick={onDownload}
-                  >
-                    Download
-                  </button>
-                  <button onClick={onSkip}>Skip this version</button>
-                </>
+                <button
+                  aria-label="close banner"
+                  className="text-white hover:text-white/50 duration-200"
+                  onClick={onClose}
+                >
+                  <LuX className="text-lg" />
+                </button>
               ) : (
                 <button
-                  className="rounded-full px-4 h-12 bg-red-500 text-white"
+                  className="rounded-full px-4 h-8 font-black hover:bg-red-400 duration-200 bg-red-500 text-white"
                   onClick={onCancel}
                 >
                   Cancel
                 </button>
               )}
             </div>
-            <button
-              aria-label="close banner"
-              className="text-white hover:text-white/50 duration-200"
-              onClick={onClose}
-            >
-              <LuX className="text-lg" />
-            </button>
+
+            <AnimatePresence>
+              {isDownloading && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                >
+                  <div className="pt-3">
+                    <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
+                      <div
+                        className="h-2 bg-blue-400 transition-all duration-300"
+                        style={{
+                          width: `${updateState.percent || 0}%`,
+                        }}
+                      />
+                    </div>
+
+                    <p className="mt-1 text-[10px] text-white/70">
+                      {updateState.status === "verifying"
+                        ? "Verifying download..."
+                        : `Downloading... ${updateState.percent ?? 0}%`}
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </motion.div>
       )}

@@ -381,7 +381,12 @@ function removeItem(ownerWebContentsId, itemId) {
   }
 }
 
-function exportVault(ownerWebContentsId, useOldPass, currentPass, newPass = "") {
+function exportVault(
+  ownerWebContentsId,
+  useOldPass,
+  currentPass,
+  newPass = "",
+) {
   try {
     requireSession(ownerWebContentsId);
 
