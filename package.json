@@ -1,10 +1,10 @@
 {
-  "name": "local-encryptor",
+  "name": "encryptoor",
   "displayName": "Encryptoor",
-  "version": "1.11.3",
+  "version": "1.12.0",
+  "description": "A local encryptor for secure text stuff.",
   "author": {
-    "name": "Sasha Aghababaie",
-    "description": "A local encryptor for secure text stuff."
+    "name": "Sasha Aghababaie"
   },
   "private": true,
   "dependencies": {
@@ -34,8 +34,14 @@
     "dev": "concurrently -k \"react-scripts start\" \"npm:electron\"",
     "electron": "wait-on tcp:127.0.0.1:3000 && electron .",
     "dist": "react-scripts build && electron-builder",
-    "dist:win32": "react-scripts build && electron-builder --win --x32",
-    "dist:win64": "react-scripts build && electron-builder --win --x64"
+    "dist:mac": "react-scripts build && electron-builder --mac",
+    "dist:mac:intel": "react-scripts build && electron-builder --mac --x64",
+    "dist:mac:apple": "react-scripts build && electron-builder --mac --arm64",
+    "dist:mac:universal": "react-scripts build && electron-builder --mac --universal",
+    "dist:win": "react-scripts build && electron-builder --win",
+    "dist:win32": "react-scripts build && electron-builder --win --ia32",
+    "dist:win64": "react-scripts build && electron-builder --win --x64",
+    "dist:all": "react-scripts build && electron-builder --mac --win --linux"
   },
   "eslintConfig": {
     "extends": [
@@ -65,36 +71,61 @@
   },
   "build": {
     "asar": true,
-    "appId": "com.name.app",
-    "productName": "app-name",
+    "appId": "com.encryptoor.app",
+    "productName": "Encryptoor",
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "files": [
-      "public/icon.png",
-      "api/*.js",
-      "build/**/*"
+      "public/electron.js",
+      "public/preload.js",
+      "public/ipc.js",
+      "api/**/*",
+      "build/**/*",
+      "!build/**/*.map",
+      "node_modules/**/*"
     ],
+    "directories": {
+      "buildResources": "build-resources",
+      "output": "dist"
+    },
     "mac": {
       "category": "public.app-category.productivity",
       "target": [
-        "dmg",
-        "zip"
-      ]
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64",
+            "universal"
+          ]
+        }
+      ],
+      "icon": "build-resources/icon.icns",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "darkModeSupport": true
     },
     "win": {
-      "icon": "public/icon.png",
       "target": [
-        "nsis",
-        "zip",
-        "portable"
-      ]
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        }
+      ],
+      "icon": "build-resources/icon.ico",
+      "publisherName": "Encryptoor",
+      "verifyUpdateCodeSignature": false
     },
-    "linux": {
-      "target": [
-        "AppImage",
-        "deb",
-        "rpm",
-        "tar.gz",
-        "zip"
-      ]
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Encryptoor",
+      "installerIcon": "build-resources/icon.ico",
+      "uninstallerIcon": "build-resources/icon.ico"
     }
   }
 }
