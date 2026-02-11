@@ -1,7 +1,7 @@
 {
   "name": "encryptoor",
   "displayName": "Encryptoor",
-  "version": "1.12.1",
+  "version": "1.12.2",
   "description": "A local encryptor for secure text stuff.",
   "author": {
     "name": "Sasha Aghababaie"
@@ -75,6 +75,7 @@
     "productName": "Encryptoor",
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "files": [
+      "src/utils/error.js",
       "public/electron.js",
       "public/preload.js",
       "public/ipc.js",
@@ -101,32 +102,59 @@
         }
       ],
       "icon": "build-resources/icon.icns",
+      "darkModeSupport": true,
+      "identity": null,
+      "sign": false,
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
-      "darkModeSupport": true
+      "entitlements": null,
+      "entitlementsInherit": null
     },
-    "win": {
-      "target": [
+    "dmg": {
+      "iconSize": 128,
+      "title": "Encryptoor-Installer",
+      "window": {
+        "width": 540,
+        "height": 380
+      },
+      "contents": [
         {
-          "target": "nsis",
-          "arch": [
-            "x64",
-            "ia32"
-          ]
+          "x": 130,
+          "y": 220,
+          "type": "file"
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
         }
       ],
-      "icon": "build-resources/icon.ico",
-      "publisherName": "Encryptoor",
-      "verifyUpdateCodeSignature": false
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "Encryptoor",
-      "installerIcon": "build-resources/icon.ico",
-      "uninstallerIcon": "build-resources/icon.ico"
+      "sign": false
     }
+  },
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": [
+          "x64",
+          "ia32"
+        ]
+      }
+    ],
+    "icon": "build-resources/icon.ico",
+    "publisherName": "Sasha Aghababaie",
+    "verifyUpdateCodeSignature": false
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "Encryptoor",
+    "uninstallDisplayName": "Encryptor Uninstaller",
+    "installerIcon": "build-resources/icon.ico",
+    "uninstallerIcon": "build-resources/icon.ico"
   }
 }
