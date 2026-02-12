@@ -89,7 +89,8 @@ export const Lock = ({ setState, state }) => {
 
           <PasswordInput
             autoFocus
-            label="Password"
+            // label="Password"
+            placeholder="Password"
             name="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
