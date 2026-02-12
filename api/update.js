@@ -5,8 +5,9 @@ const crypto = require("crypto");
 const semver = require("semver");
 const { app, shell } = require("electron");
 
-const OFFICIAL_UPDATE_DOMAIN = "sashaaghababaie.github.io/some/url";
-const MANIFEST_URL = "sashaaghababaie.github.io/some/url/update.json";
+const OFFICIAL_UPDATE_DOMAIN =
+  "https://github.com/sashaaghababaie/encryptoor/releases/latest/download";
+const MANIFEST_URL = "http://sashaaghababaie.github.io/encryptoor/update.json";
 
 const PUBLIC_KEY_PEM = `-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAo+i/Nk0f3TuS5AgcKCrW
@@ -93,6 +94,19 @@ async function verifyDownloadedFile(
 
 /**
  *
+ * @param {*} url
+ * @returns
+ */
+function getValidUrl(url) {
+  try {
+    const validUrl = new URL(url.startsWith("https") ? url : `https://${url}`);
+    return validUrl;
+  } catch {
+    return null;
+  }
+}
+/**
+ *
  * @param {*} win
  * @param {*} param1
  * @returns
@@ -115,13 +129,19 @@ async function downloadUpdateWithProgress(win) {
       throw new Error("Missing update metadata, Please try again later.");
     }
 
-    const urlObject = new URL(url.startsWith("http") ? url : `https://${url}`);
+    const urlObject = getValidUrl(url);
 
-    const officialHost = new URL(
-      OFFICIAL_UPDATE_DOMAIN.startsWith("http")
-        ? OFFICIAL_UPDATE_DOMAIN
-        : `https://${OFFICIAL_UPDATE_DOMAIN}`,
-    ).hostname;
+    if (!urlObject) {
+      throw new Error("Invalid update URL");
+    }
+
+    const updateUrlHost = getValidUrl(OFFICIAL_UPDATE_DOMAIN);
+
+    if (!updateUrlHost) {
+      throw new Error("Invalid update URL");
+    }
+
+    const officialHost = updateUrlHost.hostname;
 
     if (urlObject.hostname !== officialHost) {
       throw new Error("Invalid update source, Please try again later.");
