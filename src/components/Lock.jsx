@@ -173,7 +173,6 @@ export const ChangePassword = ({ onClose }) => {
         throw new Error(res.error);
       }
     } catch (err) {
-      console.log(err);
       setError(err.message);
 
       setButtonAnim({
@@ -189,12 +188,12 @@ export const ChangePassword = ({ onClose }) => {
     }
   };
 
-  const enoughLen = () => inputs.password.length >= 8;
-  const hasDigit = () => /\d/.test(inputs.password);
-  const hasUppercase = () => /[A-Z]/.test(inputs.password);
-  const hasLowercase = () => /[a-z]/.test(inputs.password);
+  const enoughLen = () => inputs.newPass.length >= 8;
+  const hasDigit = () => /\d/.test(inputs.newPass);
+  const hasUppercase = () => /[A-Z]/.test(inputs.newPass);
+  const hasLowercase = () => /[a-z]/.test(inputs.newPass);
   const hasSpecial = () =>
-    /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~ ]/.test(inputs.password);
+    /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~ ]/.test(inputs.newPass);
 
   return (
     <div className="absolute p-4 inset-0 z-50 flex items-center justify-center">
