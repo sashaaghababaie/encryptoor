@@ -42,8 +42,8 @@ if (!gotTheLock) {
       //   height: 30,
       // },
       title: "Encryptoor",
-      width: 920,
-      height: 600,
+      width: 940,
+      height: 660,
       webPreferences: {
         preload: path.join(__dirname, "preload.js"),
         contextIsolation: true,
