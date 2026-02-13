@@ -4,11 +4,14 @@ const isDev = require("electron-is-dev");
 const vaultEvents = require("../api/events");
 const { handleIpcs } = require("../public/ipc");
 const { lockVault } = require("../api/vault");
+
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
   // Another instance is already running
-  app.quit();
+  if (!isDev) {
+    app.quit();
+  }
 } else {
   // This is the first instance, handle second instance attempts
   app.on("second-instance", (event, commandLine, workingDirectory) => {
@@ -53,6 +56,7 @@ if (!gotTheLock) {
         navigateOnDragDrop: false,
       },
     });
+
     win.setTitle("Encryptoor");
 
     win.loadURL(

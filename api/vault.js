@@ -83,11 +83,13 @@ function readVault() {
  * Check if any vault exists
  */
 function init() {
+  const platform = process.platform;
+
   try {
     readVault();
-    return true;
+    return { isInit: true, platform };
   } catch (err) {
-    return false;
+    return { isInit: false, platform };
   }
 }
 

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { PasswordInput } from "./ui/Inputs";
 import { motion } from "motion/react";
 import { ERRORS } from "../utils/error";
+import Key from "./ui/Key";
 
 /**
  *
@@ -106,7 +107,12 @@ export const Lock = ({ setState, state }) => {
               whileHover={{ scale: 1.05 }}
               onClick={() => handleOpenVault()}
             >
-              Open Vault
+              Open Vault{" "}
+              <Key
+                size="sm"
+                keyCode="enter"
+                className="text-black/70 border-black/70"
+              />
             </motion.button>
             <p className="text-rose-500 h-12 py-2 text-xs font-bold">{error}</p>
             <div className="flex justify-center">

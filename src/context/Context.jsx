@@ -1,4 +1,4 @@
-import { useContext, createContext, useState, useEffect, useRef } from "react";
+import { useContext, createContext, useState, useEffect } from "react";
 
 const Context = createContext();
 
@@ -6,6 +6,7 @@ export const ContextProvider = ({ children }) => {
   const [initialized, setInitialized] = useState(false);
   const [data, setData] = useState([]);
   const [session, setSession] = useState(null);
+  const [platform, setPlatform] = useState(null);
 
   useEffect(() => {
     window.api.onLocked((_) => {
@@ -23,6 +24,8 @@ export const ContextProvider = ({ children }) => {
         setData,
         initialized,
         setInitialized,
+        platform,
+        setPlatform,
       }}
     >
       {children}

@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { nanoid } from "nanoid";
 import { useAppContext } from "../context/Context";
 import { TextInput, PasswordInput } from "./ui/Inputs";
-
+import Key from "./ui/Key";
 /**
  * Input Form to store a LoginInfo
  */
@@ -12,21 +12,23 @@ export const LoginForm = ({ onClose, initData }) => {
   const [inputError, setInputError] = useState("");
   const [buttonAnim, setButtonAnim] = useState({ animate: {}, transition: {} });
   const [loginData, setLoginData] = useState(
-    initData || { username: "", password: "", website: "", title: "" }
+    initData || { username: "", password: "", website: "", title: "" },
   );
 
   const { setData } = useAppContext();
 
   useEffect(() => {
     const down = (e) => {
-      if (e.key === "Enter") {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
         handleSave();
+      } else if (e.key === "Escape") {
+        onClose();
       }
     };
 
     window.addEventListener("keydown", down);
     return () => window.removeEventListener("keydown", down);
-  }, [loginData]);
+  }, [loginData, onClose]);
 
   const handleInput = (e) => {
     setInputError("");
@@ -145,7 +147,14 @@ export const LoginForm = ({ onClose, initData }) => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            Cancel
+            Cancel{" "}
+            <span className="hidden sm:inline">
+              <Key
+                size="sm"
+                keyCode="esc"
+                className="text-white/40 border-white/40"
+              />
+            </span>
           </motion.button>
           <motion.button
             {...buttonAnim}
@@ -154,7 +163,20 @@ export const LoginForm = ({ onClose, initData }) => {
             whileTap={{ scale: 0.95 }}
             onClick={handleSave}
           >
-            Save Login Info
+            Save Login Info{" "}
+            <span className="hidden sm:inline">
+              <Key
+                size="sm"
+                keyCode="cmd"
+                className="text-black/70 border-black/70"
+              />{" "}
+              +{" "}
+              <Key
+                size="sm"
+                keyCode="enter"
+                className="text-black/70 border-black/70"
+              />
+            </span>
           </motion.button>
         </div>
       </div>
@@ -175,8 +197,10 @@ export const NoteForm = ({ onClose, initData }) => {
 
   useEffect(() => {
     const down = (e) => {
-      if (e.key === "Enter") {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
         handleSave();
+      } else if (e.key === "Escape") {
+        onClose();
       }
     };
 
@@ -268,7 +292,7 @@ export const NoteForm = ({ onClose, initData }) => {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 24, opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="text-sm flex items-center  text-rose-500"
+              className="text-sm flex items-center text-rose-500"
             >
               {error}
             </motion.p>
@@ -281,7 +305,14 @@ export const NoteForm = ({ onClose, initData }) => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            Cancel
+            Cancel{" "}
+            <span className="hidden sm:inline">
+              <Key
+                size="sm"
+                keyCode="esc"
+                className="text-white/40 border-white/40"
+              />
+            </span>
           </motion.button>
           <motion.button
             {...buttonAnim}
@@ -290,7 +321,20 @@ export const NoteForm = ({ onClose, initData }) => {
             whileTap={{ scale: 0.95 }}
             onClick={handleSave}
           >
-            Save Note
+            Save Note{" "}
+            <span className="hidden sm:inline">
+              <Key
+                size="sm"
+                keyCode="cmd"
+                className="text-black/70 border-black/70"
+              />{" "}
+              +{" "}
+              <Key
+                size="sm"
+                keyCode="enter"
+                className="text-black/70 border-black/70"
+              />
+            </span>
           </motion.button>
         </div>
       </div>

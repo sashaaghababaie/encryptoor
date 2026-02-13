@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Vault from "./Vault";
 import Start from "./Start";
 import { useAppContext } from "../context/Context";
@@ -6,12 +6,13 @@ import { useAppContext } from "../context/Context";
 export default function Main() {
   const [loading, setLoading] = useState(true);
 
-  const { initialized, setInitialized } = useAppContext();
+  const { initialized, setInitialized, setPlatform } = useAppContext();
 
   useEffect(() => {
     (async () => {
-      const isInit = await window.api.init();
+      const { isInit, platform } = await window.api.init();
       setInitialized(isInit);
+      setPlatform(platform);
       setLoading(false);
     })();
   }, []);
