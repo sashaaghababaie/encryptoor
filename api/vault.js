@@ -888,8 +888,9 @@ function importVaultByBuffer(ownerWebContentsId, pass, buffer) {
     if (buffer.length > 50 * 1024 * 1024) {
       throw new Error("Vault file too large");
     }
+    const nodeBuffer = Buffer.from(buffer);
 
-    const importedVault = JSON.parse(buffer.toString("utf-8"));
+    const importedVault = JSON.parse(nodeBuffer.toString("utf-8"));
 
     validateVault(importedVault);
 

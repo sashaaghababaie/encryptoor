@@ -32,8 +32,7 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.invoke("vault:importByPath", pass, filePath),
 
   importByBuffer: (pass, buffer) => {
-    const nodeBuffer = Buffer.from(buffer);
-    return ipcRenderer.invoke("vault:importByBuffer", pass, nodeBuffer);
+    return ipcRenderer.invoke("vault:importByBuffer", pass, buffer);
   },
 
   export: (useOldPass, currentPass, newPass) =>

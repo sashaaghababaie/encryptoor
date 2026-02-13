@@ -17,8 +17,6 @@ export const Lock = ({ setState, state }) => {
 
   const input = useRef(null);
 
-  console.log(input);
-
   const addToRef = (el) => {
     if (el && input.current !== el) {
       input.current = el;
