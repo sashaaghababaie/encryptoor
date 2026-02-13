@@ -468,7 +468,8 @@ function exportVault(
 
       const vault = {
         magic: MAGIC,
-        version: VERSION,
+        schemaVersion: CURRENT_SCHEMA_VERSION,
+        appVersion: app.getVersion(),
         header: {
           createdAt: Date.now(),
           updatedAt: Date.now(),

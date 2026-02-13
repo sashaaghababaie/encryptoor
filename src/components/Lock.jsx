@@ -1,5 +1,5 @@
 import { useAppContext } from "../context/Context";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { PasswordInput } from "./ui/Inputs";
 import { motion } from "motion/react";
 import { ERRORS } from "../utils/error";
@@ -14,6 +14,24 @@ export const Lock = ({ setState, state }) => {
   const [buttonAnim, setButtonAnim] = useState({ animate: {}, transition: {} });
 
   const { setData, setInitialized, setSession } = useAppContext();
+
+  const input = useRef(null);
+
+  console.log(input);
+
+  const addToRef = (el) => {
+    if (el && input.current !== el) {
+      input.current = el;
+    }
+  };
+
+  useEffect(() => {
+    if (state === "close") {
+      if (input.current) {
+        input.current.focus();
+      }
+    }
+  }, [state]);
 
   useEffect(() => {
     const down = (e) => {
@@ -90,6 +108,7 @@ export const Lock = ({ setState, state }) => {
 
           <PasswordInput
             autoFocus
+            addToRef={addToRef}
             // label="Password"
             placeholder="Password"
             name="password"
@@ -219,6 +238,7 @@ export const ChangePassword = ({ onClose }) => {
         <div className="flex flex-col gap-1">
           <label className="text-sm">Current Password:</label>
           <PasswordInput
+            autoFocus
             name="current"
             value={inputs.current}
             onChange={handleInput}

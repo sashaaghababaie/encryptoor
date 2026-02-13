@@ -17,7 +17,6 @@ export default function ExportBackupModal({ onClose, isOpen }) {
   const [success, setSuccess] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-
   useEffect(() => {
     setNewPass("");
     setRepeatPass("");
@@ -92,11 +91,7 @@ export default function ExportBackupModal({ onClose, isOpen }) {
       // const pass = state === "current" ? currentPass : newPass;
       const useOldPass = newPass.length === 0 && state === "current";
 
-      const res = await window.api.export(
-        useOldPass,
-        currentPass,
-        newPass
-      );
+      const res = await window.api.export(useOldPass, currentPass, newPass);
 
       if (res.success) {
         setSuccess(true);
@@ -135,13 +130,16 @@ export default function ExportBackupModal({ onClose, isOpen }) {
           {!success && (
             <motion.div initial={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <div className="mt-8 text-sm">
-                <PasswordInput
-                  onChange={handleInputCurrentPass}
-                  value={currentPass}
-                  error={errors.current}
-                  name="current"
-                  label="Current Password"
-                />
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm">Current Password:</label>
+                  <PasswordInput
+                    autoFocus
+                    onChange={handleInputCurrentPass}
+                    value={currentPass}
+                    error={errors.current}
+                    name="current"
+                  />
+                </div>
               </div>
               <div className="relative flex h-12 bg-zinc-700/20 mt-8 rounded-full">
                 <div className="w-full h-12 z-0">
@@ -179,25 +177,29 @@ export default function ExportBackupModal({ onClose, isOpen }) {
                 {state === "new" && (
                   <motion.div
                     transition={{ duration: 0.12 }}
-                    className="flex flex-col gap-2 py-2 text-sm items-center"
+                    className="flex flex-col gap-2 text-sm items-center"
                     initial={{ opacity: 0, height: 0 }}
                     exit={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 128 }}
+                    animate={{ opacity: 1, height: 220 }}
                   >
-                    <PasswordInput
-                      value={newPass}
-                      onChange={handleInputNewPass}
-                      error={errors.new}
-                      name="new"
-                      label="New Password"
-                    />
-                    <PasswordInput
-                      value={repeatPass}
-                      onChange={handleInputRepeatPass}
-                      error={errors.repeat}
-                      name="repeat"
-                      label="Repeat Password"
-                    />
+                    <div className="flex flex-col gap-1 w-full mt-8">
+                      <label className="text-sm">New Password:</label>
+                      <PasswordInput
+                        value={newPass}
+                        onChange={handleInputNewPass}
+                        error={errors.new}
+                        name="new"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1 w-full mt-2">
+                      <label className="text-sm">New Password:</label>
+                      <PasswordInput
+                        value={repeatPass}
+                        onChange={handleInputRepeatPass}
+                        error={errors.repeat}
+                        name="repeat"
+                      />
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>

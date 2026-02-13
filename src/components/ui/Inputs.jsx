@@ -53,11 +53,17 @@ export const PasswordInput = ({
   className,
   type,
   error,
+  addToRef,
   ...props
 }) => {
   const [showPass, setShowPass] = useState(false);
 
   const ref = useRef(null);
+
+  const _addToRef = (el) => {
+    addToRef?.(el);
+    ref.current = el;
+  };
 
   useEffect(() => {
     if (error && error.length > 0) {
@@ -82,7 +88,7 @@ export const PasswordInput = ({
         {...props}
         type={showPass ? "text" : "password"}
         className={`w-full bg-transparent placeholder-zinc-500 outline-none text-zinc-300 ${className}`}
-        ref={ref}
+        ref={_addToRef}
       />
       {error && <span className="text-rose-500">{error}</span>}
       <button

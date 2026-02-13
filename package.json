@@ -1,7 +1,7 @@
 {
   "name": "encryptoor",
   "displayName": "Encryptoor",
-  "version": "1.12.9",
+  "version": "1.12.11",
   "description": "A local text encryptor.",
   "author": {
     "name": "Sasha Aghababaie"
