@@ -146,7 +146,7 @@ const NoteView = ({
               onPointerDown={() => setStartDelete(true)}
               onPointerUp={() => setStartDelete(false)}
               className="w-[52px] h-[52px]
-                        rounded-full bg-white/10 hover:bg-rose-700 text-white/30
+                        rounded-full bg-zinc-500/80 hover:bg-[#b14a4a] text-white/50
                         text-lg flex items-center justify-center hover:text-white/70 overflow-hidden"
             >
               {hoverTrash ? (
@@ -172,7 +172,7 @@ const NoteView = ({
                 });
               }}
               className="w-[52px] h-[52px]
-            rounded-full bg-white/10 hover:bg-blue-500/50 text-white/30
+            rounded-full bg-zinc-500 hover:bg-blue-500 text-white/50
             text-lg flex items-center justify-center hover:text-white/70 overflow-hidden"
             >
               {hoverEdit ? (
@@ -194,15 +194,15 @@ const NoteView = ({
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3, ease: "easeOut" }}
             >
-              {item.note && (
-                <Copiable text={item.note} type="multi-line">
-                  <div className="flex">
-                    <p className="w-full h-[192px] overflow-auto py-4">
-                      {item.note}
-                    </p>
-                  </div>
-                </Copiable>
-              )}
+              {/* {item.note && ( */}
+              <Copiable text={item.note} type="multi-line">
+                <div className="flex">
+                  <p className="w-full selection:bg-white selection:text-black h-[192px] overflow-auto py-4">
+                    {item.note}
+                  </p>
+                </div>
+              </Copiable>
+              {/* )} */}
             </motion.div>
           )}
         </AnimatePresence>
@@ -231,9 +231,7 @@ const LoginView = ({
   const [hoverEdit, setHoverEdit] = useState(false);
   const [realPass, setRealPass] = useState("");
 
-  useEffect(() => {
-    setRealPass(false);
-  }, [isOpen]);
+  useEffect(() => setRealPass(false), [isOpen]);
 
   useEffect(() => {
     if (realPass) {
@@ -301,8 +299,11 @@ const LoginView = ({
       });
     }
   };
+
   const height =
-    (Object.values(item).filter((val) => val.length > 0).length - 3) * 56 + 8;
+    (Object.values(item).filter((val) => val.length > 0).length - 3) * 56 +
+    8 +
+    60;
 
   return (
     <motion.li
@@ -344,7 +345,8 @@ const LoginView = ({
         className="w-full overflow-hidden font-bold text-white/70"
         initial={{ height: 60 }}
         animate={{
-          height: isOpen ? height + 60 : 60,
+          height: isOpen ? height : 60,
+          // height: isOpen ? height + 60 : 60,
         }}
         transition={{
           type: "spring",
@@ -374,7 +376,7 @@ const LoginView = ({
               onPointerDown={() => setStartDelete(true)}
               onPointerUp={() => setStartDelete(false)}
               className="w-[52px] h-[52px]
-                        rounded-full bg-white/10 hover:bg-rose-500/50 text-white/30
+                        rounded-full bg-zinc-500 hover:bg-[#b14a4a] text-white/50
                         text-lg flex items-center justify-center hover:text-white/70 overflow-hidden"
             >
               {hoverTrash ? (
@@ -392,7 +394,7 @@ const LoginView = ({
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
               onClick={() => handleEditLoginItem(item)}
               className="w-[52px] h-[52px]
-                        rounded-full bg-white/10 hover:bg-blue-500/50 text-white/30
+                        rounded-full bg-zinc-500 hover:bg-blue-500 text-white/50
                         text-lg flex items-center justify-center hover:text-white/70 overflow-hidden"
             >
               {hoverEdit ? (
@@ -418,7 +420,11 @@ const LoginView = ({
                 <Copiable text={item.username}>
                   <div className="flex gap-2">
                     <label className="text-white/40">Username:</label>
-                    <p className="w-full">{item.username}</p>
+                    <input
+                      disabled
+                      className="bg-transparent pr-2 w-full selection:bg-white selection:text-black"
+                      value={item.username}
+                    />
                   </div>
                 </Copiable>
               )}
@@ -429,7 +435,7 @@ const LoginView = ({
                       <label className="text-white/40">Password:</label>
                       <input
                         type={showPassword ? "text" : "password"}
-                        className="bg-transparent"
+                        className="bg-transparent selection:bg-white selection:text-black pr-2 w-full"
                         disabled
                         value={showPassword ? realPass : item.password}
                       />
@@ -455,7 +461,11 @@ const LoginView = ({
                 <Copiable text={item.website}>
                   <div className="flex items-center h-full gap-2">
                     <label className="text-white/40">Website:</label>
-                    <p className="w-full">{item.website}</p>
+                    <input
+                      disabled
+                      className="bg-transparent w-full selection:bg-white selection:text-black"
+                      value={item.website}
+                    />
                     {/* <a
                       href={item.website}
                       target="_blank"
