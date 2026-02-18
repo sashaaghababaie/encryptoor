@@ -124,12 +124,13 @@ const NoteView = ({
         <div className="flex shrink-0 w-full min-w-[340px] group">
           <h1
             onClick={() => setOpen(!isOpen)}
-            className="gap-2 select-none cursor-pointer h-[60px] pr-4 pl-1 w-full flex items-center font-bold text-sm"
+            className="gap-2 select-none cursor-pointer w-[calc(100%-100px)] h-[60px] pr-4 pl-1
+             flex items-center font-bold text-sm"
           >
             <span className="bg-emerald-500/30 shrink-0 h-[52px] w-[52px] rounded-full flex items-center justify-center">
               <LuFilePlus className="w-6 h-6" />
             </span>
-            {item.title}
+            <span className="truncate">{item.title}</span>
           </h1>
 
           <div className="hidden group-hover:flex absolute top-1 right-1 gap-1 items-center">
@@ -145,7 +146,7 @@ const NoteView = ({
               onPointerDown={() => setStartDelete(true)}
               onPointerUp={() => setStartDelete(false)}
               className="w-[52px] h-[52px]
-                        rounded-full bg-white/10 hover:bg-rose-500/50 text-white/30
+                        rounded-full bg-white/10 hover:bg-rose-700 text-white/30
                         text-lg flex items-center justify-center hover:text-white/70 overflow-hidden"
             >
               {hoverTrash ? (
@@ -229,7 +230,6 @@ const LoginView = ({
   const [hoverTrash, setHoverTrash] = useState(false);
   const [hoverEdit, setHoverEdit] = useState(false);
   const [realPass, setRealPass] = useState("");
-
 
   useEffect(() => {
     setRealPass(false);
@@ -355,12 +355,13 @@ const LoginView = ({
         <div className="flex shrink-0 w-full min-w-[340px] group">
           <h1
             onClick={() => setOpen(!isOpen)}
-            className="gap-2 select-none cursor-pointer h-[60px] pr-4 pl-1 w-full flex items-center  font-bold text-sm"
+            className="gap-2 select-none cursor-pointer w-[calc(100%-100px)] h-[60px] pr-4 pl-1
+             flex items-center font-bold text-sm"
           >
             <span className="bg-blue-500/30 shrink-0 h-[52px] w-[52px] rounded-full flex items-center justify-center">
               <LuCircleUserRound className="w-6 h-6" />
             </span>
-            {item.title}
+            <span className="truncate">{item.title}</span>
           </h1>
 
           <div className="hidden group-hover:flex absolute top-1 right-1 gap-1 items-center">
