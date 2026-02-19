@@ -69,13 +69,15 @@ export const Lock = ({ setState, state }) => {
   useEffect(() => {
     const down = (e) => {
       if (e.key === "Enter") {
-        handleOpenVault();
+        if (state !== "disable") {
+          handleOpenVault();
+        }
       }
     };
 
     window.addEventListener("keydown", down);
     return () => window.removeEventListener("keydown", down);
-  }, [handleOpenVault]);
+  }, [handleOpenVault, state]);
 
   return (
     <div className="absolute p-4 inset-0 z-30 flex items-center justify-center">
@@ -212,6 +214,19 @@ export const ChangePassword = ({ onClose }) => {
     }
   };
 
+  useEffect(() => {
+    const down = (e) => {
+      if (e.key === "Enter") {
+        handleChangePassword();
+      } else if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", down);
+    return () => window.removeEventListener("keydown", down);
+  }, [handleChangePassword, onClose]);
+
   const enoughLen = () => inputs.newPass.length >= 8;
   const hasDigit = () => /\d/.test(inputs.newPass);
   const hasUppercase = () => /[A-Z]/.test(inputs.newPass);
@@ -264,11 +279,18 @@ export const ChangePassword = ({ onClose }) => {
           <div className="flex gap-4">
             <motion.button
               onClick={onClose}
-              className="mt-4 w-full h-12 rounded-full border border-white/40 bg-transparent text-white/40 hover:text-rose-500 font-bold"
+              className="relative mt-4 w-full h-12 rounded-full border border-white/40 bg-transparent text-white/40 hover:text-rose-500 font-bold"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              Cancel
+              Cancel{" "}
+              <span className="hidden absolute ml-2 bottom-3.5 sm:inline-block">
+                <Key
+                  size="sm"
+                  keyCode="esc"
+                  className="text-white/25 border-white/25"
+                />
+              </span>
             </motion.button>
             <motion.button
               {...buttonAnim}
@@ -276,7 +298,12 @@ export const ChangePassword = ({ onClose }) => {
               whileHover={{ scale: 1.05 }}
               onClick={handleChangePassword}
             >
-              Change Password
+              Change Password{" "}
+              <Key
+                size="sm"
+                keyCode="enter"
+                className="text-emerald-600 border-emerald-600"
+              />
             </motion.button>
           </div>
         </div>
