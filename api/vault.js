@@ -5,7 +5,7 @@ const { app, clipboard } = require("electron");
 const isDev = require("electron-is-dev");
 const { sanitizeEntry } = require("./sanitize");
 const vaultEvents = require("./events");
-const { atomicWrite } = require("./helpers");
+const { atomicWrite, safeDelete, safeRename } = require("./helpers");
 const semver = require("semver");
 const { ERRORS } = require("../src/utils/error");
 const {
@@ -34,18 +34,42 @@ let clipboardDecoyTimer = null;
  * @param {*} index
  */
 function restoreBackup(index = 1) {
-  const backup = `${VAULT_PATH}.bak${index}`;
-
   try {
-    const data = fs.readFileSync(backup, "utf-8");
+    const backup = `${VAULT_PATH}.bak${index}`;
 
-    const vault = JSON.parse(data);
+    if (!fs.existsSync(backup)) {
+      return null;
+    }
 
-    validateVault(vault);
+    const stats = fs.statSync(file);
 
-    atomicWrite(VAULT_PATH, data);
+    if (stats.size === 0) {
+      return null; // Empty file
+    }
 
-    return vault;
+    try {
+      const data = fs.readFileSync(backup, "utf-8");
+
+      const vault = JSON.parse(data);
+
+      validateVault(vault);
+
+      // atomicWrite(VAULT_PATH, data);
+
+      if (process.platform === "win32") {
+        // Delete current file first
+        if (fs.existsSync(VAULT_PATH)) {
+          safeDelete(VAULT_PATH);
+        }
+      }
+
+      // Copy backup to main file
+      fs.copyFileSync(backup, VAULT_PATH);
+
+      return vault;
+    } catch (err) {
+      return null;
+    }
   } catch (err) {
     return null;
   }
@@ -80,7 +104,7 @@ function readVault() {
 }
 
 /**
- * Check if any vault exists
+ * Check if any vault exists and return the platform
  */
 function init() {
   const platform = process.platform;
@@ -654,8 +678,9 @@ function wipeSession() {
 function rotateBackups(file, max = 3) {
   try {
     const oldest = `${file}.bak${max}`;
+
     if (fs.existsSync(oldest)) {
-      fs.unlinkSync(oldest);
+      safeDelete(oldest);
     }
 
     for (let i = max - 1; i >= 1; i--) {
@@ -663,30 +688,41 @@ function rotateBackups(file, max = 3) {
       const dest = `${file}.bak${i + 1}`;
 
       if (fs.existsSync(src)) {
-        try {
-          fs.renameSync(src, dest);
-        } catch (err) {
-          if (err.code === "EEXIST") {
-            fs.unlinkSync(src);
-            fs.renameSync(src, dest);
-          } else {
-            throw err;
-          }
-        }
+        safeRename(src, dest);
       }
     }
-  } catch (_) {
-    //
+  } catch (err) {
+    // for debug
+    // console.warn('Backup rotation failed:', err.message);
   }
 }
 
 /**
+ * Create a backup of a file (Windows-safe)
  *
- * @param {*} file
+ * @param {string} file File to backup
+ * @returns {boolean} Success status
  */
 function createBackup(file) {
-  if (fs.existsSync(file)) {
-    fs.copyFileSync(file, `${file}.bak1`);
+  try {
+    if (!fs.existsSync(file)) {
+      return false;
+    }
+
+    const backup = `${file}.bak1`;
+
+    // delete if there are existing one for Windows-safe operation
+    if (process.platform === "win32") {
+      if (fs.existsSync(backup)) {
+        safeDelete(backup);
+      }
+    }
+
+    fs.copyFileSync(file, backup);
+    return true;
+  } catch (err) {
+    // console.warn(`Failed to create backup for ${file}:`, err.message);
+    return false;
   }
 }
 
