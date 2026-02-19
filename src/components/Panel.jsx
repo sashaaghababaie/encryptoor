@@ -31,7 +31,9 @@ export const Panel = ({
     const handleKeyDown = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "/") {
         searchRef.current.focus();
-        setPanelState((prev) => (prev === "inactive" ? "topover" : "active"));
+        setPanelState((prev) =>
+          prev === "inactive" || prev === "topover" ? "topover" : "active",
+        );
         setEditorState((prev) => {
           if (prev.show === true) {
             return { ...prev, animate: "disable" };
