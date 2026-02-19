@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAppContext } from "../context/Context";
 import { ItemView } from "./RenderItems";
 import Fuse from "fuse.js";
@@ -21,9 +21,32 @@ export const Panel = ({
   const [filter, setFilter] = useState(["login", "note"]);
   const [error, setError] = useState("");
 
+  const searchRef = useRef(null);
+
   const { setData } = useAppContext();
 
-  useEffect(() => setShowFirstTime(true), []);
+  useEffect(() => {
+    setShowFirstTime(true);
+
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "/") {
+        searchRef.current.focus();
+        setPanelState((prev) => (prev === "inactive" ? "topover" : "active"));
+        setEditorState((prev) => {
+          if (prev.show === true) {
+            return { ...prev, animate: "disable" };
+          } else {
+            return { show: false, animate: "" };
+          }
+        });
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   return (
     <motion.div
@@ -75,12 +98,13 @@ export const Panel = ({
       )}
       <div className="pb-2 flex gap-2 items-center">
         <motion.input
-          placeholder="Search..."
-          className="h-8 w-full border border-zinc-500/10 outline-none rounded-full bg-zinc-500/10 text-white/70 px-2"
+          ref={searchRef}
+          placeholder={"cmd + / to search..."}
+          className="h-10 w-full border border-zinc-500/10 outline-none rounded-full bg-zinc-500/10 text-white/70 px-4"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <div className="text-xs shrink-0 h-8">
+        <div className="text-xs shrink-0 h-10">
           <button
             className={`${
               filter.length === 2
