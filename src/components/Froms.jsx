@@ -17,19 +17,6 @@ export const LoginForm = ({ onClose, initData }) => {
 
   const { setData } = useAppContext();
 
-  useEffect(() => {
-    const down = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-        handleSave();
-      } else if (e.key === "Escape") {
-        onClose();
-      }
-    };
-
-    window.addEventListener("keydown", down);
-    return () => window.removeEventListener("keydown", down);
-  }, [loginData, onClose]);
-
   const handleInput = (e) => {
     setInputError("");
     setError("");
@@ -82,6 +69,19 @@ export const LoginForm = ({ onClose, initData }) => {
       setTimeout(() => setButtonAnim({}), 250);
     }
   };
+
+  useEffect(() => {
+    const down = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+        handleSave();
+      } else if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", down);
+    return () => window.removeEventListener("keydown", down);
+  }, [handleSave, onClose]);
 
   return (
     <div className="relative flex flex-col h-full">
@@ -195,19 +195,6 @@ export const NoteForm = ({ onClose, initData }) => {
 
   const { setData } = useAppContext();
 
-  useEffect(() => {
-    const down = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-        handleSave();
-      } else if (e.key === "Escape") {
-        onClose();
-      }
-    };
-
-    window.addEventListener("keydown", down);
-    return () => window.removeEventListener("keydown", down);
-  }, [noteData]);
-
   const handleInput = (e) => {
     setError("");
     setInputError("");
@@ -260,6 +247,19 @@ export const NoteForm = ({ onClose, initData }) => {
       setTimeout(() => setButtonAnim({}), 250);
     }
   };
+
+  useEffect(() => {
+    const down = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+        handleSave();
+      } else if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", down);
+    return () => window.removeEventListener("keydown", down);
+  }, [handleSave, onClose]);
 
   return (
     <div className="flex flex-col h-full">

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Vault from "./Vault";
 import Start from "./Start";
 import { useAppContext } from "../context/Context";
@@ -15,7 +15,7 @@ export default function Main() {
       setPlatform(platform);
       setLoading(false);
     })();
-  }, []);
+  }, [setInitialized, setPlatform]);
 
   if (loading) {
     return <div className="h-screen w-screen bg-black" />;

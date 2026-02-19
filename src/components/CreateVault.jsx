@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { motion } from "motion/react";
 import { PasswordInput } from "./ui/Inputs";
 import { useAppContext } from "../context/Context";
 
@@ -10,17 +10,6 @@ export const CreateVault = ({ setShowLock }) => {
   const [secureHint, setSecureHint] = useState(false);
 
   const { setInitialized } = useAppContext();
-
-  useEffect(() => {
-    const down = (e) => {
-      if (e.key === "Enter") {
-        handleCreateVault();
-      }
-    };
-
-    window.addEventListener("keydown", down);
-    return () => window.removeEventListener("keydown", down);
-  }, [inputs]);
 
   useEffect(() => {
     if (inputs.repeat.length > 0 && inputs.password !== inputs.repeat) {
@@ -71,6 +60,17 @@ export const CreateVault = ({ setShowLock }) => {
       setTimeout(() => setButtonAnim({}), 250);
     }
   };
+
+  useEffect(() => {
+    const down = (e) => {
+      if (e.key === "Enter") {
+        handleCreateVault();
+      }
+    };
+
+    window.addEventListener("keydown", down);
+    return () => window.removeEventListener("keydown", down);
+  }, [handleCreateVault]);
 
   const enoughLen = () => inputs.password.length >= 10;
   const hasDigit = () => /\d/.test(inputs.password);

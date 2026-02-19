@@ -40,7 +40,7 @@ const NoteView = ({
 
   useEffect(() => {
     if (holdProgress === 100) setRemovingId(item.id);
-  }, [holdProgress, item.id]);
+  }, [holdProgress, item.id, setRemovingId]);
 
   useEffect(() => {
     if (!hoverTrash) setStartDelete(false);
@@ -243,7 +243,7 @@ const LoginView = ({
 
   useEffect(() => {
     if (holdProgress === 100) setRemovingId(item.id);
-  }, [holdProgress, item.id]);
+  }, [holdProgress, item.id, setRemovingId]);
 
   useEffect(() => {
     if (!hoverTrash) setStartDelete(false);
@@ -283,21 +283,19 @@ const LoginView = ({
   };
 
   const handleEditLoginItem = async (item) => {
-    {
-      setPanelState("inactive");
+    setPanelState("inactive");
 
-      if (item.password) {
-        const pass = await window.api.show(item.id);
-        item.password = pass;
-      }
-
-      setEditorState({
-        initData: item,
-        type: item.type,
-        show: true,
-        animate: "show",
-      });
+    if (item.password) {
+      const pass = await window.api.show(item.id);
+      item.password = pass;
     }
+
+    setEditorState({
+      initData: item,
+      type: item.type,
+      show: true,
+      animate: "show",
+    });
   };
 
   const height =

@@ -31,17 +31,6 @@ export const Lock = ({ setState, state }) => {
     }
   }, [state]);
 
-  useEffect(() => {
-    const down = (e) => {
-      if (e.key === "Enter") {
-        handleOpenVault();
-      }
-    };
-
-    window.addEventListener("keydown", down);
-    return () => window.removeEventListener("keydown", down);
-  }, [password]);
-
   const handleOpenVault = async () => {
     try {
       if (password.length === 0) {
@@ -76,6 +65,17 @@ export const Lock = ({ setState, state }) => {
       setTimeout(() => setButtonAnim({}), 250);
     }
   };
+
+  useEffect(() => {
+    const down = (e) => {
+      if (e.key === "Enter") {
+        handleOpenVault();
+      }
+    };
+
+    window.addEventListener("keydown", down);
+    return () => window.removeEventListener("keydown", down);
+  }, [handleOpenVault]);
 
   return (
     <div className="absolute p-4 inset-0 z-30 flex items-center justify-center">

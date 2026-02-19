@@ -48,7 +48,7 @@ export const Panel = ({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, []);
+  }, [setPanelState, setEditorState]);
 
   return (
     <motion.div
