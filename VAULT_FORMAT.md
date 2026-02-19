@@ -8,8 +8,9 @@ Encryptoor uses a JSON-based encrypted vault format.
 
 ```json
 {
-  "magic": "VAULTX",
-  "version": 2,
+  "magic": "ENCRYPTOOR",
+  "schemaVersion": 1, // integer
+  "appVersion": , // semver 1.xx.xx
   "header": { ... },
   "protected": { ... },
   "data": { ... }
@@ -22,9 +23,13 @@ Encryptoor uses a JSON-based encrypted vault format.
 
 Identifies the file as an Encryptoor vault and prevents accidental parsing.
 
-### version
+### schemaVersion
 
 Vault format version for migrations.
+
+### appVersion
+
+App version for migrations and backward compatibility check.
 
 ### header (plaintext)
 
