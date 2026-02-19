@@ -310,9 +310,9 @@ export const ChangePassword = ({ onClose }) => {
 
         <button
           onClick={() => setSecureHint(true)}
-          className="text-xs text-zinc-400 underline-offset-2 underline underline-zinc-400 hover:underline-zinc-300 hover:text-zinc-300"
+          className="text-xs text-blue-400 underline-offset-2 underline underline-blue-400 hover:underline-blue-300 hover:text-blue-300"
         >
-          Help me create a secure password
+          Help me create a basic secure password
         </button>
 
         {secureHint && (

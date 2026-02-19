@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { PasswordInput } from "./ui/Inputs";
 import { useAppContext } from "../context/Context";
+import Key from "./ui/Key";
 
 export const CreateVault = ({ setShowLock }) => {
   const [inputs, setInputs] = useState({ password: "", repeat: "" });
@@ -93,6 +94,7 @@ export const CreateVault = ({ setShowLock }) => {
         <div className="flex flex-col gap-1">
           <label className="text-sm">Type Password:</label>
           <PasswordInput
+            autoFocus
             name="password"
             value={inputs.password}
             onChange={handleInput}
@@ -118,7 +120,12 @@ export const CreateVault = ({ setShowLock }) => {
             whileHover={{ scale: 1.05 }}
             onClick={handleCreateVault}
           >
-            Create Vault
+            Create Vault{" "}
+            <Key
+              size="sm"
+              keyCode="enter"
+              className="text-emerald-600 border-emerald-600"
+            />
           </motion.button>
         </div>
 
