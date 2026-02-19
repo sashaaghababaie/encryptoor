@@ -663,7 +663,16 @@ function rotateBackups(file, max = 3) {
       const dest = `${file}.bak${i + 1}`;
 
       if (fs.existsSync(src)) {
-        fs.renameSync(src, dest);
+        try {
+          fs.renameSync(src, dest);
+        } catch (err) {
+          if (err.code === "EEXIST") {
+            fs.unlinkSync(src);
+            fs.renameSync(src, dest);
+          } else {
+            throw err;
+          }
+        }
       }
     }
   } catch (_) {

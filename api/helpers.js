@@ -13,8 +13,17 @@ function atomicWrite(filePath, data, slug = "vault") {
 
   try {
     fs.writeFileSync(tempPath, data, { mode: 0o600 });
-    fs.fsyncSync(fs.openSync(tempPath, "r"));
-    fs.renameSync(tempPath, filePath);
+    fs.fsyncSync(fs.openSync(tempPath, "r+"));
+    try {
+      fs.renameSync(tempPath, filePath);
+    } catch (err) {
+      if (err.code === "EEXIST") {
+        fs.unlinkSync(filePath);
+        fs.renameSync(tempPath, filePath);
+      } else {
+        throw err;
+      }
+    }
   } catch (err) {
     if (err.code === "ENOSPC") {
       throw new Error(ERRORS.DISK_FULL);

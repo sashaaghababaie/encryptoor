@@ -1,7 +1,7 @@
 {
   "name": "encryptoor",
   "displayName": "Encryptoor",
-  "version": "1.13.7",
+  "version": "1.13.8",
   "description": "A local text encryptor.",
   "author": {
     "name": "Sasha Aghababaie"
@@ -41,7 +41,7 @@
     "dist:win": "react-scripts build && electron-builder --win",
     "dist:win32": "react-scripts build && electron-builder --win --ia32",
     "dist:win64": "react-scripts build && electron-builder --win --x64",
-    "dist:all": "react-scripts build && electron-builder --mac --win --linux"
+    "dist:all": "react-scripts build && electron-builder --mac --win"
   },
   "eslintConfig": {
     "extends": [
