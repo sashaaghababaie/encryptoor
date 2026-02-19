@@ -7,6 +7,7 @@ const { sanitizeEntry } = require("./sanitize");
 const vaultEvents = require("./events");
 const { atomicWrite, safeDelete, safeRename } = require("./helpers");
 const semver = require("semver");
+import { nanoid } from "nanoid";
 const { ERRORS } = require("../src/utils/error");
 const {
   aesDecrypt,
@@ -14,6 +15,7 @@ const {
   scryptKey,
   SCRYPT_PARAMS,
 } = require("./crypto");
+const { nanoid } = require("nanoid");
 
 const DB_PATH = isDev ? "desktop" : "userData";
 const VAULT_DIR = path.join(app.getPath(DB_PATH), "encryptoor");
@@ -875,6 +877,7 @@ function importVault(importedVault, pass) {
       } else {
         if (newCleanItem.updatedAt > found.updatedAt) {
           newCleanItem.title = newCleanItem.title + " [Newer from Backup]";
+          newCleanItem.id = nanoid();
           copy.push(newCleanItem);
           status.new++;
         } else if (newCleanItem.updatedAt < found.updatedAt) {
