@@ -25,9 +25,9 @@ export default function Vault() {
       const now = Date.now();
       const minDelay = 48 * 60 * 60 * 1000;
 
-      // if (now - lastCheck < minDelay) {
-      //   return;
-      // }
+      if (now - lastCheck < minDelay) {
+        return;
+      }
 
       localStorage.setItem("vault.update.lastCheck", String(now));
 
