@@ -152,7 +152,7 @@ export const LoginForm = ({ onClose, initData }) => {
               <Key
                 size="sm"
                 keyCode="esc"
-                className="text-white/40 border-white/40"
+                className="text-white/25 border-white/25"
               />
             </span>
           </motion.button>
