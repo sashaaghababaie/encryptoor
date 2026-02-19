@@ -100,7 +100,7 @@ export const Panel = ({
         <motion.input
           ref={searchRef}
           placeholder={"cmd + / to search..."}
-          className="h-10 w-full border border-zinc-500/10 outline-none rounded-full bg-zinc-500/10 text-white/70 px-4"
+          className="h-10 w-full border border-zinc-500/10 duration-200 transition-colors outline-none rounded-full bg-zinc-500/10 focus:bg-zinc-500/20 text-white/70 px-4"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
