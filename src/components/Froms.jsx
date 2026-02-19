@@ -168,13 +168,13 @@ export const LoginForm = ({ onClose, initData }) => {
               <Key
                 size="sm"
                 keyCode="cmd"
-                className="text-black/70 border-black/70"
+                className="text-emerald-700 border-emerald-700"
               />{" "}
-              +{" "}
+              <span className="text-emerald-700">+</span>{" "}
               <Key
                 size="sm"
                 keyCode="enter"
-                className="text-black/70 border-black/70"
+                className="text-emerald-700 border-emerald-700"
               />
             </span>
           </motion.button>
@@ -282,7 +282,7 @@ export const NoteForm = ({ onClose, initData }) => {
             name="note"
             onChange={handleInput}
             placeholder="Your note..."
-            className="resize-none min-h-[200px] outline-none w-full p-4 rounded-3xl h-full shadow-inner-lg bg-zinc-700/20 text-zinc-300 font-bold shadow-white"
+            className="placeholder-zinc-500 resize-none min-h-[200px] outline-none w-full p-4 rounded-3xl h-full shadow-inner-lg bg-zinc-700/20 text-zinc-300 font-bold shadow-white"
           />
         </div>
         <div className="h-full"></div>
@@ -310,7 +310,7 @@ export const NoteForm = ({ onClose, initData }) => {
               <Key
                 size="sm"
                 keyCode="esc"
-                className="text-white/40 border-white/40"
+                className="text-white/25 border-white/25"
               />
             </span>
           </motion.button>
@@ -326,13 +326,13 @@ export const NoteForm = ({ onClose, initData }) => {
               <Key
                 size="sm"
                 keyCode="cmd"
-                className="text-black/70 border-black/70"
+                className="text-emerald-700 border-emerald-700"
               />{" "}
-              +{" "}
+              <span className="text-emerald-700">+</span>{" "}
               <Key
                 size="sm"
                 keyCode="enter"
-                className="text-black/70 border-black/70"
+                className="text-emerald-700 border-emerald-700"
               />
             </span>
           </motion.button>

@@ -128,7 +128,7 @@ export const Lock = ({ setState, state }) => {
               <Key
                 size="sm"
                 keyCode="enter"
-                className="text-black/70 border-black/70"
+                className="text-emerald-600 border-emerald-600"
               />
             </motion.button>
             <p className="text-rose-500 h-12 py-2 text-xs font-bold">{error}</p>

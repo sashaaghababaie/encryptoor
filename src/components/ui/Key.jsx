@@ -12,8 +12,8 @@ const keys = {
 
 const baseClass = "inline";
 const sizes = {
-  xs: "w-3 h-3 border p-px rounded-sm text-[9px]",
-  sm: "w-4 h-4 border p-px rounded-[3px] text-[10px]",
+  xs: "w-3 h-3 border p-px rounded-sm text-[8px]",
+  sm: "w-4 h-4 border p-px px-[2px] rounded-[3px] text-[9px]",
   md: "w-5 h-5 border p-[1.5px] rounded-[4px] text-[12px]",
 };
 export default function Key({

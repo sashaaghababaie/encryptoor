@@ -47,7 +47,7 @@ export const Panel = ({
       }}
       variants={{
         active: { transform: "translateY(0px)", opacity: 1 },
-        topover: { transform: "translateY(30px)", opacity: 1 },
+        topover: { transform: "translateY(60px)", opacity: 1 },
         inactive: { transform: "translateY(400px)", opacity: 1 },
       }}
       onClick={() => {
@@ -226,8 +226,8 @@ const ItemViewContainer = ({ search, filter, children }) => {
         data: loginsResults.search(search).map((s) => s.item),
       },
     ].filter((results) =>
-      filter.includes(results.title.toLowerCase().slice(0, -1))
-    )
+      filter.includes(results.title.toLowerCase().slice(0, -1)),
+    ),
   );
 };
 
