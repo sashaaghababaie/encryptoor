@@ -115,7 +115,7 @@ export const Panel = ({
       </div>
       <div
         style={{ height: "calc(100vh - 128px)" }}
-        className={`overflow-auto ${
+        className={`overflow-auto styled-scrollbar pr-2 ${
           editor.animate === "disable" ? "pb-12" : "pb-4"
         }`}
       >

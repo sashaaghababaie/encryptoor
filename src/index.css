@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --scrollbar-thumb: #a0caa033;
+  --scrollbar-track: transparent;
+}
+
 @layer base {
   @font-face {
     font-family: "GeistMono";
@@ -21,18 +26,38 @@ body {
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
-    monospace;
+  font-family:
+    source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }
 
-::-webkit-scrollbar {
+.styled-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+.styled-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.styled-scrollbar::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+.styled-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 9999px;
+}
+
+/* ::-webkit-scrollbar {
   width: 0.25rem;
   height: 0.25rem;
 }
 
 ::-webkit-scrollbar-thumb {
   background: #ffa53f;
-}
+} */
 
 .middle-btn-3:hover {
   --pos: 100% 100%;
@@ -42,9 +67,12 @@ code {
 }
 
 .middle-btn-3 {
-  transition: background 0.5s, border-color 0.5s;
+  transition:
+    background 0.5s,
+    border-color 0.5s;
   border: 1px solid transparent;
-  background: no-repeat var(--pos, 0% 0%) / var(--scale, 800% 800%)
+  background:
+    no-repeat var(--pos, 0% 0%) / var(--scale, 800% 800%)
       linear-gradient(
         to bottom right,
         #2d2d2d 5%,
