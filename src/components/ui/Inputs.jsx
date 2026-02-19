@@ -92,6 +92,7 @@ export const PasswordInput = ({
       />
       {error && <span className="text-rose-500">{error}</span>}
       <button
+        tabIndex={-1}
         className="text-lg duration-200 text-white/50 hover:text-white/70"
         onClick={() => setShowPass(!showPass)}
       >
