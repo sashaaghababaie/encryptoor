@@ -5,9 +5,9 @@ const crypto = require("crypto");
 const semver = require("semver");
 const { app, shell } = require("electron");
 
+const MANIFEST_URL = "http://sashaaghababaie.github.io/encryptoor/update.json";
 const OFFICIAL_UPDATE_DOMAIN =
   "https://github.com/sashaaghababaie/encryptoor/releases/latest/download";
-const MANIFEST_URL = "http://sashaaghababaie.github.io/encryptoor/update.json";
 
 const PUBLIC_KEY_PEM = `-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAo+i/Nk0f3TuS5AgcKCrW
@@ -306,11 +306,13 @@ function cancelUpdateDownload() {
  */
 async function checkForUpdates() {
   try {
-    const res = await fetch(
-      MANIFEST_URL.startsWith("http")
-        ? MANIFEST_URL
-        : `https://${MANIFEST_URL}`,
-    );
+    const manifestUrlObject = getValidUrl(MANIFEST_URL);
+
+    if (!manifestUrlObject) {
+      throw new Error("Invalid manifest URL");
+    }
+
+    const res = await fetch(manifestUrlObject);
 
     if (!res.ok) {
       throw new Error("Failed to fetch update metadata");
@@ -322,7 +324,8 @@ async function checkForUpdates() {
 
     if (semver.gt(latestVersion, app.getVersion())) {
       const platform = process.platform;
-      const updateMeta = manifest.platforms[platform];
+      const arch = process.arch;
+      const updateMeta = manifest.platforms[platform][arch];
 
       if (!updateMeta) {
         updateInfo = null;
@@ -342,7 +345,8 @@ async function checkForUpdates() {
         sha256: updateMeta.sha256,
         signature: updateMeta.signature,
         size: updateMeta.size,
-        releaseNotes: manifest.releaseNotes || "",
+        releaseNotes:
+          manifest.releaseNotes || "Bug fixes and minor improvements.",
       };
     }
 
