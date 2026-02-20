@@ -1,0 +1,21 @@
+{
+  "version": "1.13.11",
+  "releaseDate": "2026-02-20",
+  "platforms": {
+    "darwin": {
+      "url": "https://github.com/sashaaghababaie/encryptoor/releases/download/v1.13.11/Encryptoor-1.13.11-mac-x64.dmg",
+      "sha256": "dd4ed6e8c9ee9fc8aa75113616c00f3a3f2d1e6e23499c652e5d0e2d757d70c3",
+      "sha512": "en5UN1T+r0Sm2reXPstfZ3TbSyAAye7pmcbacfO6qNBmLomMtUaCqIqEEOUpSewnmOd8Zi4YsM31kyhFpHGueg==",
+      "size": 120903667,
+      "signature": "KUKotSX0k0LthkpqBR65t8Bz/MgC4pDVf0NbUKjdbSMJd1srUTrhonbmX7hlpUHUuVTVvUYx+Fn5D8YsvzhHiOYkzBgvL+WfUrhATJ0oJw5NQokmsNg1fLi9wB09bINj8+SD76L8nOM5b/fz9yUA+1/19Hhy8mFes7MgUiK9KawgD1pz17jnbGAViJTbXpuFxYs1BiTT1sebmpgcqLX5eCXRQl3jncDElAlWQA0vERndRSGmIELh6av+vg2uj9Tf3tgBkucsxTu68uq3ad+5TADf+11Bt40f7mCuNK79AnAnfWkQ0ZgGQUZp2qw3XrDONdSIZqy2XfQhZe7cjhtQKw=="
+    },
+    "win32": {
+      "url": "https://github.com/sashaaghababaie/encryptoor/releases/download/v1.13.11/Encryptoor-1.13.11-win-x64.exe",
+      "sha256": "974ef09cf8d567c30da597f8c664fc5eaba5bae01c6ccd6616055270c54acee4",
+      "sha512": "j3IWzXqlwJh/e1D0NygrkYtWjL4nHWCddOUscuX8O72+S3oGwSeUW9HrHh0YgQkGdXoxpe2FNrPt40j2gEcQpQ==",
+      "size": 97518542,
+      "signature": "KdeCckaLTRg1F43va0u2r8w4Fw4vTQyCGdz66YpKkHx8AwF/lfdRNCNVdQeNQtsTPDmgroyNgXZQuUPZhHhwPONPBK+9SjolmgTI6fGGFqnW2a1mWhnavuwXPOT2SqG9P/3KCUro38G/hDtQzyWccCWH5LJRWiHiPTf/465mv71lNWeHwKLxQjbZCnRri4KYrESoHgtxfGK48hfE/CKYfBMZcq/KhMNPq9kAGif2pJixCysQvCGRNmiRnEOusOHEB+eO7I6IAX9tvpRctmoUkzzzGbGzkQRQy7PsR5OA08xTfqbTGojk4mZcAjoMRrHFjbYgptPrGDT96h5ymUZGuQ=="
+    }
+  },
+  "releaseNotes": "Bug fixes and critical UI improvements"
+}
