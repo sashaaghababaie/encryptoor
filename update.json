@@ -1,20 +1,31 @@
 {
-  "version": "1.0.0",
-  "releaseDate": "2026-02-20",
+  "version": "1.13.13",
+  "releaseDate": "2026-02-21",
   "platforms": {
     "darwin": {
-      "url": "https://github.com/sashaaghababaie/encryptoor/releases/download/v1.13.11/Encryptoor-1.13.11-mac-x64.dmg",
-      "sha256": "dd4ed6e8c9ee9fc8aa75113616c00f3a3f2d1e6e23499c652e5d0e2d757d70c3",
-      "sha512": "en5UN1T+r0Sm2reXPstfZ3TbSyAAye7pmcbacfO6qNBmLomMtUaCqIqEEOUpSewnmOd8Zi4YsM31kyhFpHGueg==",
-      "size": 120903667,
-      "signature": "KUKotSX0k0LthkpqBR65t8Bz/MgC4pDVf0NbUKjdbSMJd1srUTrhonbmX7hlpUHUuVTVvUYx+Fn5D8YsvzhHiOYkzBgvL+WfUrhATJ0oJw5NQokmsNg1fLi9wB09bINj8+SD76L8nOM5b/fz9yUA+1/19Hhy8mFes7MgUiK9KawgD1pz17jnbGAViJTbXpuFxYs1BiTT1sebmpgcqLX5eCXRQl3jncDElAlWQA0vERndRSGmIELh6av+vg2uj9Tf3tgBkucsxTu68uq3ad+5TADf+11Bt40f7mCuNK79AnAnfWkQ0ZgGQUZp2qw3XrDONdSIZqy2XfQhZe7cjhtQKw=="
+      "arm64": {
+        "url": "https://github.com/sashaaghababaie/encryptoor/releases/download/v1.13.13/Encryptoor-1.13.13-mac-arm64.dmg",
+        "sha512": "7vRVLb6hXvQ3iaOj8zb1nL+ozq5hIgvhyjqktUsLqqkdmfvJM+p6fvZICu7oOPdzzZJpkWnWygZ1NcX3JjGx2w==",
+        "sha256": "202be60f82647c15abd695f5fbafb9d1fe2f84a7a5b96c3738257b1174261b18",
+        "size": 116900738,
+        "signature": "MLgNB8rGFze0T/a5xyuvdVNRC2cnuUuTFeleB2IYkGTf+ktUtlu6kfzHAs+qERx4a0XrLHPZ06Nr9j5qNKMo2Enpt6hPPFi9pwQc7xx0p4mC5ezsJioXSqS3tT8LFUqPnrh4mJswUTj/oU1vP31dErMgKbSY1UGCJr/f0VFePAd6DX78UbqZeXJQkCnmbwpWVfAs61/2LWtyuBwTIjWeKAx70zfkrLOYQCB4ZvS98dANFEnEXp0J417zCZKICsy9/mdymDkNRPcc5p9vWLHLQrdjMecniVu5XVWX9X91Wnj2VsrlcfZHQsr0ZcY08GwYUOLWIlHB8qC54qoMQQtvRA=="
+      },
+      "x64": {
+        "url": "https://github.com/sashaaghababaie/encryptoor/releases/download/v1.13.13/Encryptoor-1.13.13-mac-x64.dmg",
+        "sha256": "f1089845ce5024569d42fab0ec4a33415ace1a0b96a1f256109c083499a8706b",
+        "sha512": "vdMyLiJopI2nfBkJYjS8dBNfIv/+zo9MQf4PdyfRYxTSlxFrUXtfx4pqribUrtCprjaL8kGucUMlG3CZE9kqTQ==",
+        "size": 120903804,
+        "signature": "Rvc3/5WORFA70lavcv1dhRqJzKy1wEmjII9gy3N2znEozvnsGRfKfb4B1LfiEYNV862/g3z11Iuo/Rmc1LJFCd9QUsoJ4s5++tH1Q3o2ooVL4jWOaOIMp+bUzN5DYrznnQn74i5bPRISwitlHuF0+lrpQ4iSQbRBN7TNgQbg+gQJxjhY6qRUaAM7JjLBTEAtfH/xktN0uusF3TNV8+ufqSoHdebtkoR7fMYhU48HyIal25seyxLjbiu0/18oQ7nkNQQa8FKw/x2VRDsqwK1E/FRncnndeRXqC2xhsTXcRmqFqbhiRRwJtfUFoLfzNnIWcd/4DUNJqcDWWIhRqFlLog=="
+      }
     },
     "win32": {
-      "url": "https://github.com/sashaaghababaie/encryptoor/releases/download/v1.13.11/Encryptoor-1.13.11-win-x64.exe",
-      "sha256": "974ef09cf8d567c30da597f8c664fc5eaba5bae01c6ccd6616055270c54acee4",
-      "sha512": "j3IWzXqlwJh/e1D0NygrkYtWjL4nHWCddOUscuX8O72+S3oGwSeUW9HrHh0YgQkGdXoxpe2FNrPt40j2gEcQpQ==",
-      "size": 97518542,
-      "signature": "KdeCckaLTRg1F43va0u2r8w4Fw4vTQyCGdz66YpKkHx8AwF/lfdRNCNVdQeNQtsTPDmgroyNgXZQuUPZhHhwPONPBK+9SjolmgTI6fGGFqnW2a1mWhnavuwXPOT2SqG9P/3KCUro38G/hDtQzyWccCWH5LJRWiHiPTf/465mv71lNWeHwKLxQjbZCnRri4KYrESoHgtxfGK48hfE/CKYfBMZcq/KhMNPq9kAGif2pJixCysQvCGRNmiRnEOusOHEB+eO7I6IAX9tvpRctmoUkzzzGbGzkQRQy7PsR5OA08xTfqbTGojk4mZcAjoMRrHFjbYgptPrGDT96h5ymUZGuQ=="
+      "x64": {
+        "url": "https://github.com/sashaaghababaie/encryptoor/releases/download/v1.13.13/Encryptoor-1.13.13-win-x64.exe",
+        "sha256": "a69bfe2f1fad7a6b2ab96d2f53eeed4a3fb7b752bb15adaffbde32ed7e1ae6b2",
+        "sha512": "cI+v22ouOXpRsZ3O49LQvos7t2dw7SB0n0G+dmxPi2kTSESQT0Stpzpv709Lnd6u146vbmcngVWCqvD4ciKaNg==",
+        "size": 97518261,
+        "signature": "aHSs843NV1LpZCstXhs9GyCf9C2qPlSxk6mTsMNs5yitzhQ7bJIttAzEjf9v8IWYgR/uR3GwhUHzLsGtdGJhfZYU4XZEQLVSQg4fyjQFiIGXiRu/LvY8FlTc9V5HP6H6iSgQyfiTIo1VlxbVPOGPum+VIAzxN44ke1uucoQRWMojzp5YfVcz76QBMZZVD2EJBY70ruWwqbo/+wMUiz01v28ZTNJ2H2omgfvAgqPuHGjOFvajlZ0axgmX9aNbMCRo4pID0qXBi0dYw/k+IlUYHsgq0IhZUHNwC9m4uN4FBxYwVHkbadQ9cmC6mzfGn8N+wCqq4fCVM4yowlS30cS0kA=="
+      }
     }
   },
   "releaseNotes": "Bug fixes and critical UI improvements"
