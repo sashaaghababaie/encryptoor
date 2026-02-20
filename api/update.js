@@ -5,9 +5,9 @@ const crypto = require("crypto");
 const semver = require("semver");
 const { app, shell } = require("electron");
 
-const MANIFEST_URL = "http://sashaaghababaie.github.io/encryptoor/update.json";
+const MANIFEST_URL = "https://sashaaghababaie.github.io/encryptoor/update.json";
 const OFFICIAL_UPDATE_DOMAIN =
-  "https://github.com/sashaaghababaie/encryptoor/releases/latest/download";
+  "https://github.com/sashaaghababaie/encryptoor/releases/";
 
 const PUBLIC_KEY_PEM = `-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAo+i/Nk0f3TuS5AgcKCrW
@@ -150,7 +150,7 @@ async function downloadUpdateWithProgress(win) {
     const dest = path.join(app.getPath("downloads"), path.basename(url));
 
     await new Promise((resolve, reject) => {
-      const req = https.get(urlObject, (res) => {
+      const req = https.get(urlObject.href, (res) => {
         if (res.statusCode !== 200) {
           reject(new Error("Download failed. Please try again later."));
           return;
@@ -306,13 +306,13 @@ function cancelUpdateDownload() {
  */
 async function checkForUpdates() {
   try {
-    const manifestUrlObject = getValidUrl(MANIFEST_URL);
+    const manifestURLObject = getValidUrl(MANIFEST_URL);
 
-    if (!manifestUrlObject) {
+    if (!manifestURLObject) {
       throw new Error("Invalid manifest URL");
     }
 
-    const res = await fetch(manifestUrlObject);
+    const res = await fetch(manifestURLObject.href);
 
     if (!res.ok) {
       throw new Error("Failed to fetch update metadata");
@@ -353,6 +353,7 @@ async function checkForUpdates() {
     updateInfo = null;
     return { available: false };
   } catch (err) {
+    console.log(err);
     updateInfo = null;
     return { available: false, error: "Update check failed" };
   }
