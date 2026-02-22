@@ -113,6 +113,7 @@ function getValidUrl(url) {
  */
 async function downloadUpdateWithProgress(win) {
   try {
+    return { success: false };
     if (activeDownload) {
       throw new Error("Download already in progress");
     }
@@ -126,148 +127,238 @@ async function downloadUpdateWithProgress(win) {
     const { url, sha256, signature } = updateInfo;
 
     if (!url || !sha256 || !signature) {
-      throw new Error("Missing update metadata, Please try again later.");
+      throw new Error("Missing update metadata. Please try again later.");
     }
 
     const urlObject = getValidUrl(url);
-
     if (!urlObject) {
       throw new Error("Invalid update URL");
     }
 
     const updateUrlHost = getValidUrl(OFFICIAL_UPDATE_DOMAIN);
-
     if (!updateUrlHost) {
-      throw new Error("Invalid update URL");
+      throw new Error("Invalid update domain");
     }
 
     const officialHost = updateUrlHost.hostname;
-
     if (urlObject.hostname !== officialHost) {
-      throw new Error("Invalid update source, Please try again later.");
+      throw new Error("Invalid update source. Please try again later.");
     }
 
     const dest = path.join(app.getPath("downloads"), path.basename(url));
 
     await new Promise((resolve, reject) => {
-      const req = https.get(urlObject.href, (res) => {
-        if (res.statusCode !== 200) {
-          reject(new Error("Download failed. Please try again later."));
-          return;
-        }
-
-        const total = Number(res.headers["content-length"]);
-
-        let received = 0;
-
-        const file = fs.createWriteStream(dest, { mode: 0o600 });
-
-        activeDownload = { req, file, dest, win, reject, cancelled: false };
-
-        res.on("data", (chunk) => {
-          received += chunk.length;
-          const percent =
-            Number.isFinite(total) && total > 0
-              ? Math.round((received / total) * 100)
-              : null;
-          if (win && !win.isDestroyed()) {
-            win.webContents.send("update:progress", {
-              status: "downloading",
-              received,
-              total,
-              percent,
-            });
-          }
-        });
-
-        res.pipe(file);
-
-        res.on("error", (err) => {
-          reject(err);
-        });
-
-        file.on("error", (err) => {
-          reject(err);
-        });
-
-        file.on("finish", () => {
-          file.close(() => {
-            (async () => {
-              try {
-                if (activeDownload?.cancelled) {
-                  return;
-                }
-
-                if (win && !win.isDestroyed()) {
-                  win.webContents.send("update:progress", {
-                    status: "verifying",
-                    received,
-                    total,
-                    percent:
-                      Number.isFinite(total) && total > 0
-                        ? Math.round((received / total) * 100)
-                        : null,
-                  });
-                }
-
-                const verification = await verifyDownloadedFile(
-                  dest,
-                  sha256,
-                  signature,
-                  PUBLIC_KEY_PEM,
-                );
-
-                if (!verification.valid) {
-                  // Delete invalid file
-                  fs.unlinkSync(dest);
-                  reject(
-                    new Error(verification.error || "Verification failed"),
-                  );
-                  return;
-                }
-                if (win && !win.isDestroyed()) {
-                  win.webContents.send("update:progress", {
-                    status: "completed",
-                    received: total,
-                    total,
-                    percent: 100,
-                  });
-                }
-
-                downloadedDest = dest;
-
-                resolve();
-              } catch (err) {
-                reject(err);
-              } finally {
-                activeDownload = null;
-              }
-            })();
-          });
-        });
-      });
-
-      req.on("error", (err) => {
-        activeDownload = null;
-        reject(err);
-      });
-
-      req.on("close", () => {
-        if (activeDownload?.cancelled) {
-          return;
-        }
-        activeDownload = null;
-      });
+      downloadWithRedirects(urlObject.href, dest, win, resolve, reject);
     });
 
     return { success: true };
   } catch (err) {
+    // console.error("Download error:", err);
     if (activeDownload) {
       activeDownload = null;
     }
 
     return { success: false, error: err.message };
   }
+}
+
+/**
+ * Download with automatic redirect following
+ */
+function downloadWithRedirects(
+  url,
+  dest,
+  win,
+  resolve,
+  reject,
+  redirectCount = 0,
+) {
+  const MAX_REDIRECTS = 5;
+
+  if (redirectCount > MAX_REDIRECTS) {
+    reject(new Error("Too many redirects"));
+    return;
+  }
+
+  const urlObject = new URL(url);
+
+  const req = https.get(urlObject, (res) => {
+    if (activeDownload?.cancelled) {
+      resolve("CANCELLED");
+      return;
+    }
+
+    if ([301, 302, 303, 307, 308].includes(res.statusCode)) {
+      const redirectUrl = res.headers.location;
+      if (!redirectUrl) {
+        reject(new Error("Redirect with no location header"));
+        return;
+      }
+      downloadWithRedirects(
+        redirectUrl,
+        dest,
+        win,
+        resolve,
+        reject,
+        redirectCount + 1,
+      );
+      return;
+    }
+
+    if (res.statusCode !== 200) {
+      reject(new Error(`Download failed with status ${res.statusCode}`));
+      return;
+    }
+
+    const total = Number(res.headers["content-length"]);
+    let received = 0;
+
+    const file = fs.createWriteStream(dest, { mode: 0o600 });
+
+    const downloadState = {
+      cancelled: false,
+      req,
+      file,
+      dest,
+      win,
+    };
+
+    activeDownload = downloadState;
+
+    res.on("data", (chunk) => {
+      if (downloadState.cancelled) {
+        // console.log("Cancelled during download");
+        return;
+      }
+
+      received += chunk.length;
+      const percent =
+        Number.isFinite(total) && total > 0
+          ? Math.round((received / total) * 100)
+          : null;
+
+      if (win && !win.isDestroyed()) {
+        win.webContents.send("update:progress", {
+          status: "downloading",
+          received,
+          total,
+          percent,
+        });
+      }
+    });
+
+    res.pipe(file);
+
+    res.on("error", (err) => {
+      // console.error("Response error:", err);
+      reject(err);
+    });
+
+    file.on("error", (err) => {
+      // console.error("File write error:", err);
+      reject(err);
+    });
+
+    file.on("finish", () => {
+      file.close(async () => {
+        try {
+          if (downloadState.cancelled) {
+            activeDownload = null;
+            resolve("CANCELLED");
+            return;
+          }
+
+          // Send verifying status
+          if (win && !win.isDestroyed()) {
+            win.webContents.send("update:progress", {
+              status: "verifying",
+              received,
+              total,
+              percent: 100,
+            });
+          }
+
+          // Verify download
+          const verification = await verifyDownloadedFile(
+            dest,
+            updateInfo.sha256,
+            updateInfo.signature,
+            PUBLIC_KEY_PEM,
+          );
+
+          if (!verification.valid) {
+            // console.error("Verification failed:", verification.error);
+            fs.unlinkSync(dest);
+            reject(new Error(verification.error || "Verification failed"));
+            return;
+          }
+
+          if (win && !win.isDestroyed()) {
+            win.webContents.send("update:progress", {
+              status: "completed",
+              received: total,
+              total,
+              percent: 100,
+            });
+          }
+
+          downloadedDest = dest;
+          resolve("SUCCESS");
+        } catch (err) {
+          // console.error("Verification error:", err);
+          reject(err);
+        } finally {
+          activeDownload = null;
+        }
+      });
+    });
+  });
+
+  req.on("error", (err) => {
+    // console.error("Request error:", err);
+    activeDownload = null;
+    reject(err);
+  });
+}
+
+function cancelUpdateDownload() {
+  if (!activeDownload) {
+    return { cancelled: false };
+  }
+
+  activeDownload.cancelled = true;
+
+  if (activeDownload.req) {
+    try {
+      activeDownload.req.destroy();
+    } catch (err) {
+      // console.warn("Error destroying request:", err);
+    }
+  }
+
+  // Close file
+  if (activeDownload.file) {
+    try {
+      const destPath = activeDownload.dest;
+
+      activeDownload.file.close(() => {
+        if (fs.existsSync(destPath)) {
+          try {
+            fs.unlinkSync(destPath);
+          } catch (err) {}
+        }
+      });
+    } catch (err) {}
+  }
+
+  // Notify UI
+  if (activeDownload.win && !activeDownload.win.isDestroyed()) {
+    activeDownload.win.webContents.send("update:progress", {
+      status: "cancelled",
+    });
+  }
+
+  return { cancelled: true };
 }
 
 /**
@@ -279,23 +370,45 @@ function cancelUpdateDownload() {
     return { cancelled: false };
   }
 
-  activeDownload.cancelled = true;
-  activeDownload.req.destroy(new Error("Download cancelled"));
+  // console.log("Cancelling update download...");
 
-  if (activeDownload.file) {
-    activeDownload.file.close(() => {
-      if (fs.existsSync(activeDownload.dest)) {
-        fs.unlinkSync(activeDownload.dest);
-      }
-    });
+  activeDownload.cancelled = true;
+
+  // Destroy request
+  if (activeDownload.req) {
+    try {
+      activeDownload.req.destroy();
+    } catch (err) {
+      // console.warn("Error destroying request:", err);
+    }
   }
 
-  activeDownload.win?.webContents.send("update:progress", {
-    status: "cancelled",
-  });
+  // Close file
+  if (activeDownload.file) {
+    try {
+      const destPath = activeDownload.dest;
 
-  activeDownload.reject(new Error("Download cancelled"));
-  activeDownload = null;
+      activeDownload.file.close(() => {
+        if (fs.existsSync(destPath)) {
+          try {
+            fs.unlinkSync(destPath);
+            // console.log("Deleted partial download");
+          } catch (err) {
+            // console.warn("Could not delete partial file:", err);
+          }
+        }
+      });
+    } catch (err) {
+      // console.warn("Error closing file:", err);
+    }
+  }
+
+  // Notify UI
+  if (activeDownload.win && !activeDownload.win.isDestroyed()) {
+    activeDownload.win.webContents.send("update:progress", {
+      status: "cancelled",
+    });
+  }
 
   return { cancelled: true };
 }
@@ -351,10 +464,11 @@ async function checkForUpdates() {
     }
 
     updateInfo = null;
+
     return { available: false };
   } catch (err) {
-    console.log(err);
     updateInfo = null;
+
     return { available: false, error: "Update check failed" };
   }
 }
@@ -372,7 +486,21 @@ function showDownloadedFile() {
   downloadedDest = null;
 }
 
+/**
+ *
+ */
+function openDownloadLink() {
+  if (updateInfo?.url) {
+    const validUrl = getValidUrl(updateInfo.url);
+
+    if (validUrl) {
+      shell.openExternal(validUrl.href);
+    }
+  }
+}
+
 module.exports = {
+  openDownloadLink,
   showDownloadedFile,
   downloadUpdateWithProgress,
   cancelUpdateDownload,

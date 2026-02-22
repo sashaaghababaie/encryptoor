@@ -46,6 +46,8 @@ contextBridge.exposeInMainWorld("api", {
 
   cancelUpdateDownload: () => ipcRenderer.invoke("update:cancel"),
 
+  openDownloadLink: () => ipcRenderer.invoke("update:openLink"),
+
   onUpdateProgress: (cb) => {
     const handler = (_, data) => cb(data);
     ipcRenderer.on("update:progress", handler);

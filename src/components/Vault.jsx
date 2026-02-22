@@ -40,7 +40,7 @@ export default function Vault() {
         setUpdateInfo(res);
       }
     })();
-  }, []);
+  }, [state]);
 
   useEffect(() => {
     if (state !== "open") return;
@@ -200,6 +200,15 @@ const UpdateBanner = ({ state, updateInfo, onClose, onSkip }) => {
                       {updateState.error && (
                         <p className="mt-2 text-red-400">{updateState.error}</p>
                       )}
+                      {updateState.error ===
+                        "Download failed. Please try again later." && (
+                        <button
+                          className="underline underline-offset-4 decoration-white/40 text-white/80 hover:text-white/40 mt-6 block"
+                          onClick={() => window.api.openDownloadLink()}
+                        >
+                          Or Download manually from official resource (Github)
+                        </button>
+                      )}
                     </div>
                     <div className="flex items-center font-black gap-4 mr-4">
                       {!isDownloading && (
@@ -218,7 +227,7 @@ const UpdateBanner = ({ state, updateInfo, onClose, onSkip }) => {
                           </button>
                         </>
                       )}
-                    </div>{" "}
+                    </div>
                   </>
                 )}
               </div>

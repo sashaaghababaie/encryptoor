@@ -4,6 +4,7 @@ const {
   cancelUpdateDownload,
   checkForUpdates,
   showDownloadedFile,
+  openDownloadLink,
 } = require("../api/update");
 const {
   init,
@@ -83,6 +84,10 @@ function handleIpcs() {
   ipcMain.handle("update:download", async (e) => {
     const win = BrowserWindow.fromWebContents(e.sender);
     return await downloadUpdateWithProgress(win);
+  });
+
+  ipcMain.handle("update:openLink", (_) => {
+    return openDownloadLink();
   });
 
   ipcMain.handle("update:cancel", async () => {
